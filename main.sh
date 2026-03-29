@@ -99,7 +99,7 @@ about_create() {
 
 ls() {
     # Run the real ls with all arguments
-    command ls "$@" # command is a shell builtin that tells to execute the next words as command rather than 
+    command ls "$@" --color # command is a shell builtin that tells to execute the next words as command rather than 
     # as a function or builtin. $@ expands all the arguments to the current function. It expands to $1, $2 etc. 
     # as separate quoted words.
 
