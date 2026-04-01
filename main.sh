@@ -78,7 +78,14 @@ function ls {
 
     # 2. Show metadata for every item inside the listed dir
     local found_any=0
-    setopt local_options null_glob # This makes all globs in this function return empty if no match
+    # Make all globs in this function return empty if no match
+    if [ -n "$ZSH_VERSION" ]; then # -n checks for non-zero length. -e checks the existence of files, whereas -n helps for strings
+        # Zsh specific setting
+        setopt local_options null_glob
+    elif [ -n "$BASH_VERSION" ]; then
+        # Bash specific setting
+        shopt -s nullglob
+    fi
     # since above, we ensured that $list_dir is absolute path, all the values that item takes in this loop are also absolute paths
     for item in "$list_dir"/.[!.]* "$list_dir"/*; do # "$list_dir"/.[!.]* matches all entries in current directory, whose names start with . but excludes just . and .. 
         # "$list_dir"/* expands to all nonhidden files. * by default doesn't include the names starting with .
@@ -96,6 +103,11 @@ function ls {
             found_any=1
         fi
     done
+    
+    if [ -n "$BASH_VERSION" ]; then
+        # Bash specific setting
+        shopt -u nullglob
+    fi
 }
 
 function mv {
