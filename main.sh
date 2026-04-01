@@ -78,8 +78,8 @@ function ls {
 
     # 2. Show metadata for every item inside the listed dir
     local found_any=0
+    setopt local_options null_glob # This makes all globs in this function return empty if no match
     # since above, we ensured that $list_dir is absolute path, all the values that item takes in this loop are also absolute paths
-    # shopt -s nullglob  # Handle empty globs gracefully
     for item in "$list_dir"/.[!.]* "$list_dir"/*; do # "$list_dir"/.[!.]* matches all entries in current directory, whose names start with . but excludes just . and .. 
         # "$list_dir"/* expands to all nonhidden files. * by default doesn't include the names starting with .
 
@@ -96,7 +96,6 @@ function ls {
             found_any=1
         fi
     done
-    # shopt -u nullglob  # Restore original setting
 }
 
 function mv {
