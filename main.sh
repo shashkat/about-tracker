@@ -1,71 +1,9 @@
-#!/bin/bash
-# Given a path (file or dir), print the name of its metadata file.
-# The metadata file lives in the same directory as the target.
-_about_meta_name() {
-    local target="$1"
-    local dir base ext meta_name
+#!/usr/bin/env bash
 
-    # Resolve to absolute, stripping trailing slash for dirs
-    target="${target%/}"
+# Import our library
+source "$(dirname "${BASH_SOURCE[0]}")/lib/functions.sh"
 
-    base="$(basename "$target")"
-    if [[ -d "$target" ]]; then
-        # corner case: if target is of form some_path/hello/. then instead of echoing .about_dir_..md, echo ../.about_dir_hello.md
-        if [[ "$base" == "." ]]; then
-            dir="$(dirname "$target")"
-            dir="$(realpath "$dir")" # need absolute path because with just target=. dir is also . and then below line would not be able to extract the name of parent dir
-            parent_dir="$(basename "$dir")" # this yields just the name of the parent directory of target without any part of path before it which may be present in $dir
-            meta_name="../.about_dir_${parent_dir}.md"
-        else
-            meta_name=".about_dir_${base}.md"
-        fi
-    else
-        # Replace dots with underscores in the full filename (incl. extension)
-        # local safe="${base//./_}" # not replacing dots with underscore
-        meta_name=".about_file_${base}.md"
-    fi
-
-    echo "$meta_name"
-}
-
-# Given a path, print the full path to its metadata file (sibling location).
-_about_meta_path() {
-    local target="$1"
-    target="${target%/}"
-    local dir meta_name # declare variables dir and meta_name in one line
-
-    dir="$(dirname "$target")" # dirname echos (writes to standard output) the directory part of its rhs (assumes it to be a path). Similar function is basename which returns the file part of its rhs.
-    meta_name="$(_about_meta_name "$target")"
-    echo "${dir}/${meta_name}" # having braces surrounding the variable makes it more explicit what the variable name is that we want to decode/expand
-}
-
-# Print the contents of a metadata file with a label
-_about_print_meta() {
-    local meta_path="$1"
-    local label="$2"
-    if [[ -f "$meta_path" ]]; then
-        printf '\033[90m▸ %s: \033[0m' "$label"
-        # printf '\033[38;5;30m▸ %s\033[0m\n' "$label"
-        # sed 's/^/  /' "$meta_path" # print to std out, all the lines in $meta_path, each prefixed by 2 spaces.
-        awk '{printf "\033[90m%s\033[0m\n", $0}' "$meta_path"
-        # echo
-    fi
-}
-
-# Print the contents of a metadata file with a label (different color for current dir metadata)
-_about_print_meta_currdir() {
-    local meta_path="$1"
-    local label="$2"
-    if [[ -f "$meta_path" ]]; then
-        # printf '\033[90m▸ %s: \033[0m' "$label"
-        printf '\033[38;5;30m▸ %s: \033[0m' "$label"
-        # sed 's/^/  /' "$meta_path" # print to std out, all the lines in $meta_path, each prefixed by 2 spaces.
-        awk '{printf "\033[90m%s\033[0m\n", $0}' "$meta_path"
-        # echo
-    fi
-}
-
-about_create() {
+function about_create {
     # $# is a special bash variable to indicate the number of arguments provided to the function. -eq indicates
     # numerical comparison between left and right entities. Note that variables in bash are inherently typeless, 
     # and their type is interpreted according to context. Here, if -eq were replaced by == then there would have 
@@ -105,9 +43,9 @@ about_create() {
     "${EDITOR:-vim}" "$meta_path" # ${VAR:-word} is a standard parameter expansion in bash, that gives word if VAR is unset or empty, else VAR
 }
 
-ls() {
+function ls {
     # Run the real ls with all arguments
-    command ls "$@" --color # command is a shell builtin that tells to execute the next words as command rather than 
+    command ls --color "$@" # command is a shell builtin that tells to execute the next words as command rather than 
     # as a function or builtin. $@ expands all the arguments to the current function. It expands to $1, $2 etc. 
     # as separate quoted words.
 
@@ -139,8 +77,9 @@ ls() {
     _about_print_meta_currdir "$dir_meta" "$(basename "$list_dir")/ (this directory)"
 
     # 2. Show metadata for every item inside the listed dir
-    local found_any=0    
+    local found_any=0
     # since above, we ensured that $list_dir is absolute path, all the values that item takes in this loop are also absolute paths
+    # shopt -s nullglob  # Handle empty globs gracefully
     for item in "$list_dir"/.[!.]* "$list_dir"/*; do # "$list_dir"/.[!.]* matches all entries in current directory, whose names start with . but excludes just . and .. 
         # "$list_dir"/* expands to all nonhidden files. * by default doesn't include the names starting with .
 
@@ -157,9 +96,10 @@ ls() {
             found_any=1
         fi
     done
+    # shopt -u nullglob  # Restore original setting
 }
 
-mv() {
+function mv {
     # Collect all source arguments (everything except the last, which is dest)
     local args=("$@")
     local dest="${args[-1]}"
@@ -192,7 +132,7 @@ mv() {
     command mv "$@"
 }
 
-cp() {
+function cp {
     # this function has code very similar to in mv function above. For comments, see in mv function hence.
     local args=("$@")
     local dest="${args[-1]}"
@@ -221,7 +161,7 @@ cp() {
     command cp "$@"
 }
 
-rm() {
+function rm {
     # Collect targets (non-flag args) and find associated metadata files
     local targets=()
     local flags=()
