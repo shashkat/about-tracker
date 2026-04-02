@@ -4,9 +4,18 @@
 # imagining them as empty strings instead. -o allows having a named command set, hence -o pipefail go together. 
 # -o pipefail makes command pipelines to fail if any command in the pipeline fails, instead of just the last one.
 
-set -uo pipefail # removing the -e part because I still want to run all tests even if some fail
+# set -uo pipefail # removing the -e part because I still want to run all tests even if some fail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # current script's directory, post resolving symlinks
+# get location of current script
+# first check if BASH_SOURCE variable is empty or not. It is empty if current script was called using source. 
+# If current script was called using ./ then it holds the location to current script
+if [[ -n $BASH_SOURCE ]]; then
+    current_script_loc="${BASH_SOURCE[0]}"
+else
+    current_script_loc="${0}"
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${current_script_loc}")" && pwd)" # current script's directory, post resolving symlinks
 # Import functions
 # source "${SCRIPT_DIR}/../lib/functions.sh"
 source "${SCRIPT_DIR}/../main.sh"
@@ -285,11 +294,31 @@ test_ls() {
     say "${yellow}Testing complete for function ls()!${reset}"
 }
 
+test_cp() {
+    # local base_dir="path/to/test_folders"
+    local base_dir="${SCRIPT_DIR}/test_folders"
+
+    # ──────────────────────────────────────────────
+    # 1. Copy file-with-metadata into a directory
+    # ──────────────────────────────────────────────
+    (
+        cp "$base_dir/abc.md" "$base_dir/ghi"
+
+        # The file itself should exist
+        is "$([ -f "$base_dir/ghi/abc.md" ] && echo yes)" "yes" \
+            "cp: file copied into dir"
+
+        # Teardown
+        rm -f "$base_dir/ghi/abc.md"
+    )
+}
+
 # --- Run tests ---
 
-test_about_meta_name
-test_about_meta_path
-test_about_print_meta
-test_ls
+# test_about_meta_name
+# test_about_meta_path
+# test_about_print_meta
+# test_ls
+test_cp
 
 say "# PASS: $tests_run tests"

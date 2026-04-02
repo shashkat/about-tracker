@@ -20,20 +20,14 @@ function _about_meta_name {
     target="${target%/}"
 
     base="$(basename "$target")"
-    if [[ -d "$target" ]]; then
-        # corner case: if target is of form some_path/hello/. then instead of echoing .about_dir_..md, echo ../.about_dir_hello.md
-        if [[ "$base" == "." ]]; then
-            dir="$(dirname "$target")"
-            dir="$(realpath "$dir")" # need absolute path because with just target=. dir is also . and then below line would not be able to extract the name of parent dir
-            parent_dir="$(basename "$dir")" # this yields just the name of the parent directory of target without any part of path before it which may be present in $dir
-            meta_name="../.about_dir_${parent_dir}.md"
-        else
-            meta_name=".about_dir_${base}.md"
-        fi
+    # corner case: if target is of form some_path/hello/. then instead of echoing .about_dir_..md, echo ../.about_dir_hello.md
+    if [[ "$base" == "." ]]; then
+        dir="$(dirname "$target")"
+        dir="$(realpath "$dir")" # need absolute path because with just target=. dir is also . and then below line would not be able to extract the name of parent dir
+        parent_dir="$(basename "$dir")" # this yields just the name of the parent directory of target without any part of path before it which may be present in $dir
+        meta_name="../.about_${parent_dir}.md"
     else
-        # Replace dots with underscores in the full filename (incl. extension)
-        # local safe="${base//./_}" # not replacing dots with underscore
-        meta_name=".about_file_${base}.md"
+        meta_name=".about_${base}.md"
     fi
 
     echo "$meta_name"
