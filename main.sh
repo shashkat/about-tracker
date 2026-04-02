@@ -103,7 +103,7 @@ function ls {
             found_any=1
         fi
     done
-    
+
     if [ -n "$BASH_VERSION" ]; then
         # Bash specific setting
         shopt -u nullglob
@@ -113,6 +113,10 @@ function ls {
 function mv {
     # Collect all source arguments (everything except the last, which is dest)
     local args=("$@")
+
+    # to keep uniformity with copy command, keeping the move command of the actual files before the metadata files
+    command mv "$@" || return $? 
+
     local dest="${args[-1]}"
     unset 'args[-1]' # this removes the last entity from args array. Also, its not that now args[-1] points to the 
     # original second last entity of it. args[-1] now points to nothing. The original second last entity of args is 
@@ -139,13 +143,17 @@ function mv {
             command mv "$src_meta" "$dest_meta_path"
         fi
     done
-
-    command mv "$@"
 }
 
 function cp {
     # this function has code very similar to in mv function above. For comments, see in mv function hence.
     local args=("$@")
+
+    # it is important that first, the actual file's copy is attempted and then of the metadata files. This way, 
+    # if there is to be an error in the original copy command (like when we attempt to copy a dir without using -r), 
+    # it happens before any of the metadata files are copied
+    command cp "$@" || return $? # $? holds the exit status of the last command that ran. Hence, here we exit and return the exit status of the last command.
+
     local dest="${args[-1]}"
     unset 'args[-1]'
     local sources=("${args[@]}")
@@ -168,8 +176,6 @@ function cp {
             command cp "$src_meta" "$dest_meta_path"
         fi
     done
-
-    command cp "$@"
 }
 
 function rm {
