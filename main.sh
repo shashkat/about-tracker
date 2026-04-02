@@ -6,8 +6,7 @@
 if [[ -n $BASH_SOURCE ]]; then
     current_script_loc="${BASH_SOURCE[0]}"
 else
-    pwd_loc=$(pwd)
-    current_script_loc="${pwd_loc}/${0}"
+    current_script_loc="${0}"
 fi
 
 # Import our library
