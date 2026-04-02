@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 
+# get location of current script
+# first check if BASH_SOURCE variable is empty or not. It is empty if current script was called using source. 
+# If current script was called using ./ then it holds the location to current script
+if [[ -n $BASH_SOURCE ]]; then
+    current_script_loc="${BASH_SOURCE[0]}"
+else
+    pwd_loc=$(pwd)
+    current_script_loc="${pwd_loc}/${0}"
+fi
+
 # Import our library
-source "$(dirname "${BASH_SOURCE[0]}")/lib/functions.sh"
+source "$(dirname "${current_script_loc}")/lib/functions.sh"
 
 function about_create {
     # $# is a special bash variable to indicate the number of arguments provided to the function. -eq indicates
