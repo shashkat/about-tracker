@@ -538,6 +538,313 @@ test_mv() {
     )
     tests_run=$((tests_run + 1))
 
+    # 4. single file without existing metadata actually moved to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv file1.txt dir1
+        entity_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
+        source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single file without existing metadata actually moved to new location with source and target paths relative"
+        # reset
+        command mv dir1/file1.txt .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 5. single file without existing metadata actually moved to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/file1.txt" "${base_dir}/dir1"
+        entity_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
+        source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single file without existing metadata actually moved to new location with source and target paths absolute"
+        # reset
+        command mv dir1/file1.txt .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 6. single file with existing metadata actually moved to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/file3.txt" "${base_dir}/dir1"
+        entity_moved="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
+        metadata_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
+        source_gone="$([[ ! -f "file3.txt" ]] && echo yes3)"
+        source_meta_gone="$([[ ! -f ".about_file3.txt.md" ]] && echo yes4)"
+        got="${entity_moved} ${metadata_moved} ${source_gone} ${source_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4" "single file with existing metadata actually moved to new location with source and target paths absolute"
+        # reset
+        command mv dir1/file3.txt .
+        command mv dir1/.about_file3.txt.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 7. single file with existing metadata renamed-moved with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv file3.txt file4.txt
+        entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
+        metadata_moved="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
+        source_gone="$([[ ! -f "file3.txt" ]] && echo yes3)"
+        source_meta_gone="$([[ ! -f ".about_file3.txt.md" ]] && echo yes4)"
+        got="${entity_moved} ${metadata_moved} ${source_gone} ${source_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4" "single file with existing metadata renamed-moved with source and target paths relative"
+        # reset
+        command mv file4.txt file3.txt
+        command mv .about_file4.txt.md .about_file3.txt.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 8. single file without existing metadata renamed-moved with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv file1.txt file4.txt
+        entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
+        source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single file without existing metadata renamed-moved with source and target paths relative"
+        # reset
+        command mv file4.txt file1.txt
+    )
+    tests_run=$((tests_run + 1))
+
+    # 9. single file with existing metadata renamed-moved with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/file3.txt" "${base_dir}/file4.txt"
+        entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
+        metadata_moved="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
+        source_gone="$([[ ! -f "file3.txt" ]] && echo yes3)"
+        source_meta_gone="$([[ ! -f ".about_file3.txt.md" ]] && echo yes4)"
+        got="${entity_moved} ${metadata_moved} ${source_gone} ${source_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4" "single file with existing metadata renamed-moved with source and target paths absolute"
+        # reset
+        command mv file4.txt file3.txt
+        command mv .about_file4.txt.md .about_file3.txt.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 10. single file without existing metadata renamed-moved with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/file1.txt" "${base_dir}/file4.txt"
+        entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
+        source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single file without existing metadata renamed-moved with source and target paths absolute"
+        # reset
+        command mv file4.txt file1.txt
+    )
+    tests_run=$((tests_run + 1))
+
+    # 11. single dir without existing metadata actually moved to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv dir1 dir2
+        entity_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
+        source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single dir without existing metadata actually moved to new location with source and target paths relative"
+        # reset
+        command mv dir2/dir1 .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 12. single dir without existing metadata actually moved to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/dir1" "${base_dir}/dir2"
+        entity_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
+        source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single dir without existing metadata actually moved to new location with source and target paths absolute"
+        # reset
+        command mv dir2/dir1 .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 13. single dir with existing metadata actually moved to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/dir3" "${base_dir}/dir1"
+        entity_moved="$([[ -d "dir1/dir3" ]] && echo yes1)"
+        metadata_moved="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
+        source_gone="$([[ ! -d "dir3" ]] && echo yes3)"
+        source_meta_gone="$([[ ! -f ".about_dir3.md" ]] && echo yes4)"
+        got="${entity_moved} ${metadata_moved} ${source_gone} ${source_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4" "single dir with existing metadata actually moved to new location with source and target paths absolute"
+        # reset
+        command mv dir1/dir3 .
+        command mv dir1/.about_dir3.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 14. single dir with existing metadata renamed-moved with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv dir3 dir4
+        entity_moved="$([[ -d "dir4" ]] && echo yes1)"
+        metadata_moved="$([[ -f ".about_dir4.md" ]] && echo yes2)"
+        source_gone="$([[ ! -d "dir3" ]] && echo yes3)"
+        source_meta_gone="$([[ ! -f ".about_dir3.md" ]] && echo yes4)"
+        got="${entity_moved} ${metadata_moved} ${source_gone} ${source_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4" "single dir with existing metadata renamed-moved with source and target paths relative"
+        # reset
+        command mv dir4 dir3
+        command mv .about_dir4.md .about_dir3.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 15. single dir without existing metadata renamed-moved with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv dir1 dir4
+        entity_moved="$([[ -d "dir4" ]] && echo yes1)"
+        source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single dir without existing metadata renamed-moved with source and target paths relative"
+        # reset
+        command mv dir4 dir1
+    )
+    tests_run=$((tests_run + 1))
+
+    # 16. single dir with existing metadata renamed-moved with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/dir3" "${base_dir}/dir4"
+        entity_moved="$([[ -d "dir4" ]] && echo yes1)"
+        metadata_moved="$([[ -f ".about_dir4.md" ]] && echo yes2)"
+        source_gone="$([[ ! -d "dir3" ]] && echo yes3)"
+        source_meta_gone="$([[ ! -f ".about_dir3.md" ]] && echo yes4)"
+        got="${entity_moved} ${metadata_moved} ${source_gone} ${source_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4" "single dir with existing metadata renamed-moved with source and target paths absolute"
+        # reset
+        command mv dir4 dir3
+        command mv .about_dir4.md .about_dir3.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 17. single dir without existing metadata renamed-moved with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/dir1" "${base_dir}/dir4"
+        entity_moved="$([[ -d "dir4" ]] && echo yes1)"
+        source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
+        got="${entity_moved} ${source_gone}"
+        is "$got" "yes1 yes2" "single dir without existing metadata renamed-moved with source and target paths absolute"
+        # reset
+        command mv dir4 dir1
+    )
+    tests_run=$((tests_run + 1))
+
+    # 18. multiple files (mixed metadata) actually moved to new location with relative paths
+    (
+        cd "$base_dir" || exit
+        mv file1.txt file3.txt dir1
+        file1_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
+        file3_moved="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
+        file3_meta_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
+        file1_gone="$([[ ! -f "file1.txt" ]] && echo yes4)"
+        file3_gone="$([[ ! -f "file3.txt" ]] && echo yes5)"
+        file3_meta_gone="$([[ ! -f ".about_file3.txt.md" ]] && echo yes6)"
+        got="${file1_moved} ${file3_moved} ${file3_meta_moved} ${file1_gone} ${file3_gone} ${file3_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4 yes5 yes6" "multiple files (mixed metadata) actually moved to new location with relative paths"
+        # reset
+        command mv dir1/file1.txt .
+        command mv dir1/file3.txt .
+        command mv dir1/.about_file3.txt.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 19. multiple files (mixed metadata) actually moved to new location with absolute paths
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/file1.txt" "${base_dir}/file3.txt" "${base_dir}/dir1"
+        file1_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
+        file3_moved="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
+        file3_meta_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
+        file1_gone="$([[ ! -f "file1.txt" ]] && echo yes4)"
+        file3_gone="$([[ ! -f "file3.txt" ]] && echo yes5)"
+        file3_meta_gone="$([[ ! -f ".about_file3.txt.md" ]] && echo yes6)"
+        got="${file1_moved} ${file3_moved} ${file3_meta_moved} ${file1_gone} ${file3_gone} ${file3_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4 yes5 yes6" "multiple files (mixed metadata) actually moved to new location with absolute paths"
+        # reset
+        command mv dir1/file1.txt .
+        command mv dir1/file3.txt .
+        command mv dir1/.about_file3.txt.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 20. multiple dirs (mixed metadata) actually moved to new location with relative paths
+    (
+        cd "$base_dir" || exit
+        mv dir1 dir3 dir2
+        dir1_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
+        dir3_moved="$([[ -d "dir2/dir3" ]] && echo yes2)"
+        dir3_meta_moved="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
+        dir1_gone="$([[ ! -d "dir1" ]] && echo yes4)"
+        dir3_gone="$([[ ! -d "dir3" ]] && echo yes5)"
+        dir3_meta_gone="$([[ ! -f ".about_dir3.md" ]] && echo yes6)"
+        got="${dir1_moved} ${dir3_moved} ${dir3_meta_moved} ${dir1_gone} ${dir3_gone} ${dir3_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4 yes5 yes6" "multiple dirs (mixed metadata) actually moved to new location with relative paths"
+        # reset
+        command mv dir2/dir1 .
+        command mv dir2/dir3 .
+        command mv dir2/.about_dir3.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 21. multiple dirs (mixed metadata) actually moved to new location with absolute paths
+    (
+        cd "$base_dir" || exit
+        mv "${base_dir}/dir1" "${base_dir}/dir3" "${base_dir}/dir2"
+        dir1_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
+        dir3_moved="$([[ -d "dir2/dir3" ]] && echo yes2)"
+        dir3_meta_moved="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
+        dir1_gone="$([[ ! -d "dir1" ]] && echo yes4)"
+        dir3_gone="$([[ ! -d "dir3" ]] && echo yes5)"
+        dir3_meta_gone="$([[ ! -f ".about_dir3.md" ]] && echo yes6)"
+        got="${dir1_moved} ${dir3_moved} ${dir3_meta_moved} ${dir1_gone} ${dir3_gone} ${dir3_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4 yes5 yes6" "multiple dirs (mixed metadata) actually moved to new location with absolute paths"
+        # reset
+        command mv dir2/dir1 .
+        command mv dir2/dir3 .
+        command mv dir2/.about_dir3.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 22. multiple mixed entities (file + dir, mixed metadata) moved to new location with relative paths
+    (
+        cd "$base_dir" || exit
+        mv file3.txt dir3 dir1
+        file3_moved="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
+        file3_meta_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
+        dir3_moved="$([[ -d "dir1/dir3" ]] && echo yes3)"
+        dir3_meta_moved="$([[ -f "dir1/.about_dir3.md" ]] && echo yes4)"
+        file3_gone="$([[ ! -f "file3.txt" ]] && echo yes5)"
+        file3_meta_gone="$([[ ! -f ".about_file3.txt.md" ]] && echo yes6)"
+        dir3_gone="$([[ ! -d "dir3" ]] && echo yes7)"
+        dir3_meta_gone="$([[ ! -f ".about_dir3.md" ]] && echo yes8)"
+        got="${file3_moved} ${file3_meta_moved} ${dir3_moved} ${dir3_meta_moved} ${file3_gone} ${file3_meta_gone} ${dir3_gone} ${dir3_meta_gone}"
+        is "$got" "yes1 yes2 yes3 yes4 yes5 yes6 yes7 yes8" "multiple mixed entities (file + dir, mixed metadata) moved to new location with relative paths"
+        # reset
+        command mv dir1/file3.txt .
+        command mv dir1/.about_file3.txt.md .
+        command mv dir1/dir3 .
+        command mv dir1/.about_dir3.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 23. non-existing source dir - dir4 doesn't exist
+    (
+        cd "$base_dir" || exit
+        mv dir4 dir1 2>/dev/null
+        got="$([[ ! -d "dir1/dir4" ]] && echo yes)"
+        is "$got" "yes" "non existing dir attempted to be moved"
+    )
+    tests_run=$((tests_run + 1))
+
     say "${yellow}Testing complete for function mv()!${reset}"
 }
 
