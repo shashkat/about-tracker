@@ -12,19 +12,19 @@ fi
 
 # wrapper functions that run the relevant script as executable
 
-about_modify() {
+function about_modify {
     ${ABOUT_TRACKER_PATH}/bin/about_modify.sh "$@"
 }
-ls() {
+function ls {
     ${ABOUT_TRACKER_PATH}/bin/ls.sh "$@"
 }
-cp() {
+function cp {
     ${ABOUT_TRACKER_PATH}/bin/cp.sh "$@"
 }
-mv() {
+function mv {
     ${ABOUT_TRACKER_PATH}/bin/mv.sh "$@"
 }
-rm() {
+function rm {
     ${ABOUT_TRACKER_PATH}/bin/rm.sh "$@"
 }
 
