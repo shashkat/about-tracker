@@ -16,6 +16,12 @@ function _about_meta_name {
     local target="$1"
     local dir base ext meta_name
 
+    # corner case: if target is empty string
+    if [[ ! -n "$target" ]]; then
+        echo "empty string supplied as input to _about_meta_name"
+        return 1
+    fi
+
     # Resolve to absolute, stripping trailing slash for dirs
     target="${target%/}"
 

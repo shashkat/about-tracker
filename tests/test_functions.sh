@@ -1,26 +1,18 @@
 #!/usr/bin/env bash
-# set -euo pipefail # set command sets the options for the shell. -e causes the script to exit immediately if any 
-# command returns a non-zero exit status. -u leads to references to empty variables as errors, instead of 
-# imagining them as empty strings instead. -o allows having a named command set, hence -o pipefail go together. 
-# -o pipefail makes command pipelines to fail if any command in the pipeline fails, instead of just the last one.
 
-# set -uo pipefail # removing the -e part because I still want to run all tests even if some fail
-
-# get location of current script
-# first check if BASH_SOURCE variable is empty or not. It is empty if current script was called using source. 
-# If current script was called using ./ then it holds the location to current script
-if [[ -n $BASH_SOURCE ]]; then
-    current_script_loc="${BASH_SOURCE[0]}"
-else
-    current_script_loc="${0}"
+# Although at this point, ABOUT_TRACKER_PATH variable should generally exist only, but just to be sure, 
+# I check here again.
+if [[ -z "${ABOUT_TRACKER_PATH}" ]]; then # -z checks if a variable is empty or unset
+    echo "Error: ABOUT_TRACKER_PATH global variable is not set. Please define it in your .zshrc or .bashrc before running this script."
+    exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${current_script_loc}")" && pwd)" # current script's directory, post resolving symlinks
-# Import functions
-# source "${SCRIPT_DIR}/../lib/functions.sh"
-source "${SCRIPT_DIR}/../main.sh"
+source "${ABOUT_TRACKER_PATH}/lib/main.sh"
+source "${ABOUT_TRACKER_PATH}/lib/functions.sh"
 
-declare -i tests_run=0 # declare forces the variable to be treated as an integer and allows operations like ((tests_run++))
+SCRIPT_DIR="${ABOUT_TRACKER_PATH}/tests"
+
+declare -i tests_run=0 # declare -i forces the variable to be treated as an integer and allows operations like ((tests_run++))
 
 say() {
     printf "%b\n" "$@" # %b is a version of %s that expands backslash escape sequences. This was required to print color. that %s is a placeholder for a string value. printf "%s\n" executes again and again until all the entities are exhausted in $@
@@ -46,153 +38,72 @@ is() {
 
 test_about_meta_name() {
     local got
-    local base_dir="${SCRIPT_DIR}/test_folders"
+    local base_dir="${SCRIPT_DIR}/folders"
+    tests_run=0
 
-    # 1. Standard File
-    # Current behavior: appends .about_file_ prefix and .md suffix
-    got="$(_about_meta_name "$base_dir/abc.md")"
-    is "$got" ".about_file_abc.md.md" "File: abc.md"
+    # 1. no input
+    got="$(_about_meta_name "")"
+    is "$got" "empty string supplied as input to _about_meta_name" "no input"
 
-    # 2. Standard Directory
-    # Ensure it uses .about_dir_ prefix
-    # Note: We simulate a directory path; the function uses [[ -d ]] 
-    # so these paths should actually exist in your test environment.
-    got="$(_about_meta_name "$base_dir/my_folder")"
-    is "$got" ".about_dir_my_folder.md" "Directory: my_folder"
-
-    # 3. Directory with Trailing Slash
-    # Testing the target="${target%/}" logic
-    got="$(_about_meta_name "$base_dir/my_folder/")"
-    is "$got" ".about_dir_my_folder.md" "Directory: my_folder/ (trailing slash)"
-
-    # 4. Corner Case: The Dot (.) target
-    # Testing the if [[ "$base" == "." ]] logic
-    # This requires realpath, so we use a subshell to cd in
-    (
-        cd "$base_dir/my_folder" || exit
-        got="$(_about_meta_name ".")"
-        is "$got" "../.about_dir_my_folder.md" "Corner case: dot (.) path"
-    )
-    tests_run=$((tests_run + 1)) # wherever I am spinning up a subshell, the increment in tests_run in the 
-    # subshell doesn't reflect in this script. Hence I have to do that manually in those cases.
-
-    # 5. Hidden File
-    # Testing how it handles files that already start with a dot
-    got="$(_about_meta_name "$base_dir/.hidden")"
-    is "$got" ".about_file_.hidden.md" "File: hidden file .hidden"
-
-    # 6. Deeply nested file
-    got="$(_about_meta_name "$base_dir/a/b/c/leaf.txt")"
-    is "$got" ".about_file_leaf.txt.md" "File: Deeply nested leaf.txt"
-
-    # 7. Basic Relative File Path
+    # 2. simple file input relpath
     (
         cd "$base_dir" || exit
-        # Passing a relative filename in the current directory
-        got="$(_about_meta_name "abc.md")"
-        is "$got" ".about_file_abc.md.md" "Relative path: simple file"
+        got="$(_about_meta_name "./file3.txt")"
+        is "$got" ".about_file3.txt.md" "simple file (file3.txt) relpath."
     )
     tests_run=$((tests_run + 1))
 
-    # 8. Relative Path to a nested file
+    # 3. simple file input abspath
+    got="$(_about_meta_name "$base_dir/file3.txt")"
+    is "$got" ".about_file3.txt.md" "simple file (file3.txt) abspath."
+
+    # 4. simple dir input relpath
     (
         cd "$base_dir" || exit
-        # Moving down into the tree
-        got="$(_about_meta_name "ghi/jkl.md")"
-        is "$got" ".about_file_jkl.md.md" "Relative path: nested file ghi/jkl.md"
+        got="$(_about_meta_name "./dir1")"
+        is "$got" ".about_dir1.md" "simple dir (dir1) relpath."
     )
     tests_run=$((tests_run + 1))
 
-    # 9. Relative Path using '..' (Parent directory)
-    (
-        cd "$base_dir/ghi" || exit
-        # Target is abc.md which is one level up
-        got="$(_about_meta_name "../abc.md")"
-        is "$got" ".about_file_abc.md.md" "Relative path: using .."
-    )
-    tests_run=$((tests_run + 1))
-
-    # 10. The Dot (.) corner case from a nested folder
-    (
-        cd "$base_dir/a/b/c" || exit
-        # This triggers your logic: meta_name="../.about_dir_${parent_dir}.md"
-        got="$(_about_meta_name ".")"
-        is "$got" "../.about_dir_c.md" "Relative path: dot (.) in nested folder 'c'"
-    )
-    tests_run=$((tests_run + 1))
-
-    # 11. Relative Directory Path
-    (
-        cd "$base_dir" || exit
-        got="$(_about_meta_name "ghi")"
-        is "$got" ".about_dir_ghi.md" "Relative path: directory 'ghi'"
-    )
-    tests_run=$((tests_run + 1))
-
-    # 12. The "Dot-Slash" prefix (./)
-    (
-        cd "$base_dir" || exit
-        got="$(_about_meta_name "./def.md")"
-        is "$got" ".about_file_def.md.md" "Relative path: using ./"
-    )
-    tests_run=$((tests_run + 1))
+    # 5. simple dir input abspath
+    got="$(_about_meta_name "$base_dir/dir1")"
+    is "$got" ".about_dir1.md" "simple dir (dir1) abspath."
 
     say "${yellow}Testing complete for function _about_meta_name()!${reset}"
 }
 
 test_about_meta_path() {
     local got
-    local base_dir="${SCRIPT_DIR}/test_folders"
+    local base_dir="${SCRIPT_DIR}/folders"
+    tests_run=0
     
-    # 1. Absolute Path to a Directory
-    # Target: .../test_folders/ghi
-    # Expected: .../test_folders/.about_dir_ghi.md
-    got="$(_about_meta_path "$base_dir/ghi")"
-    is "$got" "$base_dir/.about_dir_ghi.md" "Abs Path Dir: ghi"
+    # 1. no input
+    got="$(_about_meta_path "")"
+    is "$got" "./empty string supplied as input to _about_meta_name" "no input"
 
-    # 2. Absolute Path to a File
-    # Target: .../test_folders/abc.md
-    # Expected: .../test_folders/.about_file_abc.md.md
-    got="$(_about_meta_path "$base_dir/abc.md")"
-    is "$got" "$base_dir/.about_file_abc.md.md" "Abs Path File: abc.md"
-
-    # 3. Relative Path from Current Directory
-    # Target: abc.md
-    # Expected: ./.about_file_abc.md.md (dirname of "abc.md" is ".")
+    # 2. simple file input relpath
     (
         cd "$base_dir" || exit
-        got="$(_about_meta_path "abc.md")"
-        is "$got" "./.about_file_abc.md.md" "Rel Path: simple file"
+        got="$(_about_meta_path "./file3.txt")"
+        is "$got" "./.about_file3.txt.md" "simple file (file3.txt) relpath."
     )
     tests_run=$((tests_run + 1))
 
-    # 4. Relative Path to Nested File
-    # Target: ghi/mno.md
-    # Expected: ghi/.about_file_mno.md.md
+    # 3. simple file input abspath
+    got="$(_about_meta_path "$base_dir/file3.txt")"
+    is "$got" "$base_dir/.about_file3.txt.md" "simple file (file3.txt) abspath."
+
+    # 4. simple file input relpath
     (
         cd "$base_dir" || exit
-        got="$(_about_meta_path "ghi/mno.md")"
-        is "$got" "ghi/.about_file_mno.md.md" "Rel Path: nested file ghi/mno.md"
+        got="$(_about_meta_path "./dir1")"
+        is "$got" "./.about_dir1.md" "simple dir (dir1) relpath."
     )
     tests_run=$((tests_run + 1))
 
-    # 5. Corner Case: The Dot (.) target
-    # Target: .
-    # Your _about_meta_name returns "../.about_dir_my_folder.md"
-    # dirname "." returns "."
-    # Expected Result: ./../.about_dir_my_folder.md
-    (
-        cd "$base_dir/my_folder" || exit
-        got="$(_about_meta_path ".")"
-        is "$got" "./../.about_dir_my_folder.md" "Rel Path Corner Case: dot (.)"
-    )
-    tests_run=$((tests_run + 1))
-
-    # 6. Deeply Nested Absolute Path
-    # Target: .../test_folders/a/b/c
-    # Expected: .../test_folders/a/b/.about_dir_c.md
-    got="$(_about_meta_path "$base_dir/a/b/c")"
-    is "$got" "$base_dir/a/b/.about_dir_c.md" "Abs Path: deeply nested directory"
+    # 5. simple file input abspath
+    got="$(_about_meta_path "$base_dir/dir1")"
+    is "$got" "$base_dir/.about_dir1.md" "simple dir (dir1) abspath."
 
     say "${yellow}Testing complete for function _about_meta_path()!${reset}"
 }
@@ -200,6 +111,7 @@ test_about_meta_path() {
 test_about_print_meta() {
     local got
     local base_dir="${SCRIPT_DIR}/test_folders"
+    tests_run=0
     
     # 1. Single Line
     got="$(_about_print_meta "$base_dir/.about_file_def.md.md" "File Note")"
@@ -234,6 +146,7 @@ test_ls() {
     local got
     local expected
     local base_dir="${SCRIPT_DIR}/test_folders"
+    tests_run=0
 
     # 1. Directory with single file and matching metadata
     (
@@ -295,22 +208,337 @@ test_ls() {
 }
 
 test_cp() {
-    # local base_dir="path/to/test_folders"
-    local base_dir="${SCRIPT_DIR}/test_folders"
+    local got
+    local base_dir="${SCRIPT_DIR}/folders"
+    tests_run=0
 
-    # ──────────────────────────────────────────────
-    # 1. Copy file-with-metadata into a directory
-    # ──────────────────────────────────────────────
+    # 1. non existing input - file4.txt doesn't exist
     (
-        cp "$base_dir/abc.md" "$base_dir/ghi"
-
-        # The file itself should exist
-        is "$([ -f "$base_dir/ghi/abc.md" ] && echo yes)" "yes" \
-            "cp: file copied into dir"
-
-        # Teardown
-        rm -f "$base_dir/ghi/abc.md"
+        cd "$base_dir" || exit
+        cp file4.txt file5.txt 2>/dev/null
+        got="$([[ ! -f "file5.txt" ]] && echo yes)"
+        is "$got" "yes" "non existing file attempted to be copied"
     )
+    tests_run=$((tests_run + 1))
+
+    # 2. single file with existing metadata actually copied to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp file3.txt dir1
+        entity_copied="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
+        metadata_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
+        got="${entity_copied} ${metadata_copied}"
+        is "$got" "yes1 yes2" "single file with existing metadata actually copied to new location with source and target paths relative"
+        # reset files (remove copied files)
+        command rm dir1/file3.txt
+        command rm dir1/.about_file3.txt.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 3. single file without existing metadata actually copied to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp file1.txt dir1
+        entity_copied="$([[ -f "dir1/file1.txt" ]] && echo yes)"
+        got="${entity_copied}"
+        is "$got" "yes" "single file without existing metadata actually copied to new location with source and target paths relative"
+        # reset files (remove copied files)
+        command rm dir1/file1.txt
+    )
+    tests_run=$((tests_run + 1))
+
+    # 4. single file with existing metadata renamed-copied with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp file3.txt file4.txt
+        entity_copied="$([[ -f "file4.txt" ]] && echo yes1)"
+        metadata_copied="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
+        got="${entity_copied} ${metadata_copied}"
+        is "$got" "yes1 yes2" "single file with existing metadata renamed-copied with source and target paths relative"
+        # reset files (remove copied files)
+        command rm file4.txt
+        command rm .about_file4.txt.md
+    )
+    tests_run=$((tests_run + 1))
+    
+    # 5. single file without existing metadata actually copied to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        cp "${base_dir}/file1.txt" "${base_dir}/dir1"
+        entity_copied="$([[ -f "dir1/file1.txt" ]] && echo yes)"
+        got="${entity_copied}"
+        is "$got" "yes" "single file without existing metadata actually copied to new location with source and target paths absolute"
+        # reset files (remove copied files)
+        command rm dir1/file1.txt
+    )
+    tests_run=$((tests_run + 1))
+
+    # 6. single dir with existing metadata actually copied to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp -r dir3 dir1
+        entity_copied="$([[ -d "dir1/dir3" ]] && echo yes1)"
+        metadata_copied="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
+        got="${entity_copied} ${metadata_copied}"
+        is "$got" "yes1 yes2" "single dir with existing metadata actually copied to new location with source and target paths relative"
+        # reset files (remove copied files)
+        command rm -r dir1/dir3
+        command rm -r dir1/.about_dir3.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 7. single dir without existing metadata actually copied to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp -r dir1 dir2
+        entity_copied="$([[ -d "dir2/dir1" ]] && echo yes)"
+        got="${entity_copied}"
+        is "$got" "yes" "single dir without existing metadata actually copied to new location with source and target paths relative"
+        # reset
+        command rm -r dir2/dir1
+    )
+    tests_run=$((tests_run + 1))
+
+    # 8. single dir with existing metadata renamed-copied with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp -r dir3 dir4
+        entity_copied="$([[ -d "dir4" ]] && echo yes1)"
+        metadata_copied="$([[ -f ".about_dir4.md" ]] && echo yes2)"
+        got="${entity_copied} ${metadata_copied}"
+        is "$got" "yes1 yes2" "single dir with existing metadata renamed-copied with source and target paths relative"
+        # reset
+        command rm -r dir4
+        command rm .about_dir4.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 9. single dir without existing metadata renamed-copied with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp -r dir1 dir4
+        entity_copied="$([[ -d "dir4" ]] && echo yes)"
+        got="${entity_copied}"
+        is "$got" "yes" "single dir without existing metadata renamed-copied with source and target paths relative"
+        # reset
+        command rm -r dir4
+    )
+    tests_run=$((tests_run + 1))
+
+    # 10. single dir with existing metadata actually copied to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        cp -r "${base_dir}/dir3" "${base_dir}/dir1"
+        entity_copied="$([[ -d "dir1/dir3" ]] && echo yes1)"
+        metadata_copied="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
+        got="${entity_copied} ${metadata_copied}"
+        is "$got" "yes1 yes2" "single dir with existing metadata actually copied to new location with source and target paths absolute"
+        # reset
+        command rm -r dir1/dir3
+        command rm dir1/.about_dir3.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 11. single file with existing metadata actually copied to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        cp "${base_dir}/file3.txt" "${base_dir}/dir1"
+        entity_copied="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
+        metadata_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
+        got="${entity_copied} ${metadata_copied}"
+        is "$got" "yes1 yes2" "single file with existing metadata actually copied to new location with source and target paths absolute"
+        # reset
+        command rm dir1/file3.txt
+        command rm dir1/.about_file3.txt.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 12. single file with existing metadata renamed-copied with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        cp "${base_dir}/file3.txt" "${base_dir}/file4.txt"
+        entity_copied="$([[ -f "file4.txt" ]] && echo yes1)"
+        metadata_copied="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
+        got="${entity_copied} ${metadata_copied}"
+        is "$got" "yes1 yes2" "single file with existing metadata renamed-copied with source and target paths absolute"
+        # reset
+        command rm file4.txt
+        command rm .about_file4.txt.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 13. single file without existing metadata renamed-copied with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        cp file1.txt file4.txt
+        entity_copied="$([[ -f "file4.txt" ]] && echo yes)"
+        got="${entity_copied}"
+        is "$got" "yes" "single file without existing metadata renamed-copied with source and target paths relative"
+        # reset
+        command rm file4.txt
+    )
+    tests_run=$((tests_run + 1))
+
+    # 14. single file without existing metadata renamed-copied with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        cp "${base_dir}/file1.txt" "${base_dir}/file4.txt"
+        entity_copied="$([[ -f "file4.txt" ]] && echo yes)"
+        got="${entity_copied}"
+        is "$got" "yes" "single file without existing metadata renamed-copied with source and target paths absolute"
+        # reset
+        command rm file4.txt
+    )
+    tests_run=$((tests_run + 1))
+
+    # 15. single dir without existing metadata actually copied to new location with source and target paths absolute
+    (
+        cd "$base_dir" || exit
+        cp -r "${base_dir}/dir1" "${base_dir}/dir2"
+        entity_copied="$([[ -d "dir2/dir1" ]] && echo yes)"
+        got="${entity_copied}"
+        is "$got" "yes" "single dir without existing metadata actually copied to new location with source and target paths absolute"
+        # reset
+        command rm -r dir2/dir1
+    )
+    tests_run=$((tests_run + 1))
+
+    # 16. multiple files (mixed metadata) actually copied to new location with relative paths
+    (
+        cd "$base_dir" || exit
+        cp file1.txt file3.txt dir1
+        file1_copied="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
+        file3_copied="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
+        file3_meta_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
+        got="${file1_copied} ${file3_copied} ${file3_meta_copied}"
+        is "$got" "yes1 yes2 yes3" "multiple files (mixed metadata) actually copied to new location with relative paths"
+        # reset
+        command rm dir1/file1.txt
+        command rm dir1/file3.txt
+        command rm dir1/.about_file3.txt.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 17. multiple files (mixed metadata) actually copied to new location with absolute paths
+    (
+        cd "$base_dir" || exit
+        cp "${base_dir}/file1.txt" "${base_dir}/file3.txt" "${base_dir}/dir1"
+        file1_copied="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
+        file3_copied="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
+        file3_meta_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
+        got="${file1_copied} ${file3_copied} ${file3_meta_copied}"
+        is "$got" "yes1 yes2 yes3" "multiple files (mixed metadata) actually copied to new location with absolute paths"
+        # reset
+        command rm dir1/file1.txt
+        command rm dir1/file3.txt
+        command rm dir1/.about_file3.txt.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 18. multiple dirs (mixed metadata) actually copied to new location with relative paths
+    (
+        cd "$base_dir" || exit
+        cp -r dir1 dir3 dir2
+        dir1_copied="$([[ -d "dir2/dir1" ]] && echo yes1)"
+        dir3_copied="$([[ -d "dir2/dir3" ]] && echo yes2)"
+        dir3_meta_copied="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
+        got="${dir1_copied} ${dir3_copied} ${dir3_meta_copied}"
+        is "$got" "yes1 yes2 yes3" "multiple dirs (mixed metadata) actually copied to new location with relative paths"
+        # reset
+        command rm -r dir2/dir1
+        command rm -r dir2/dir3
+        command rm dir2/.about_dir3.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 19. multiple dirs (mixed metadata) actually copied to new location with absolute paths
+    (
+        cd "$base_dir" || exit
+        cp -r "${base_dir}/dir1" "${base_dir}/dir3" "${base_dir}/dir2"
+        dir1_copied="$([[ -d "dir2/dir1" ]] && echo yes1)"
+        dir3_copied="$([[ -d "dir2/dir3" ]] && echo yes2)"
+        dir3_meta_copied="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
+        got="${dir1_copied} ${dir3_copied} ${dir3_meta_copied}"
+        is "$got" "yes1 yes2 yes3" "multiple dirs (mixed metadata) actually copied to new location with absolute paths"
+        # reset
+        command rm -r dir2/dir1
+        command rm -r dir2/dir3
+        command rm dir2/.about_dir3.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 20. multiple mixed entities (file + dir, mixed metadata) copied to new location with relative paths
+    (
+        cd "$base_dir" || exit
+        cp -r file3.txt dir3 dir1
+        file3_copied="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
+        file3_meta_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
+        dir3_copied="$([[ -d "dir1/dir3" ]] && echo yes3)"
+        dir3_meta_copied="$([[ -f "dir1/.about_dir3.md" ]] && echo yes4)"
+        got="${file3_copied} ${file3_meta_copied} ${dir3_copied} ${dir3_meta_copied}"
+        is "$got" "yes1 yes2 yes3 yes4" "multiple mixed entities (file + dir, mixed metadata) copied to new location with relative paths"
+        # reset
+        command rm dir1/file3.txt
+        command rm dir1/.about_file3.txt.md
+        command rm -r dir1/dir3
+        command rm dir1/.about_dir3.md
+    )
+    tests_run=$((tests_run + 1))
+
+    # 21. non-existing source dir - dir4 doesn't exist
+    (
+        cd "$base_dir" || exit
+        cp -r dir4 dir1 2>/dev/null
+        got="$([[ ! -d "dir1/dir4" ]] && echo yes)"
+        is "$got" "yes" "non existing dir attempted to be copied"
+    )
+    tests_run=$((tests_run + 1))
+    say "${yellow}Testing complete for function cp()!${reset}"
+}
+
+test_mv() {
+    local got
+    local base_dir="${SCRIPT_DIR}/folders"
+    tests_run=0
+
+    # 1. non existing input - file4.txt doesn't exist
+    (
+        cd "$base_dir" || exit
+        mv file4.txt file5.txt 2>/dev/null
+        got="$([[ ! -f "file5.txt" ]] && echo yes)"
+        is "$got" "yes" "non existing file attempted to be moved"
+    )
+    tests_run=$((tests_run + 1))
+
+    # 2. single file with existing metadata actually moved to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv file3.txt dir1
+        entity_moved="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
+        metadata_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
+        got="${entity_moved} ${metadata_moved}"
+        is "$got" "yes1 yes2" "single file with existing metadata actually moved to new location with source and target paths relative"
+        # reset files (bring back moved files)
+        command mv dir1/file3.txt .
+        command mv dir1/.about_file3.txt.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    # 3. single dir with existing metadata actually moved to new location with source and target paths relative
+    (
+        cd "$base_dir" || exit
+        mv dir3 dir1
+        entity_moved="$([[ -d "dir1/dir3" ]] && echo yes1)"
+        metadata_moved="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
+        got="${entity_moved} ${metadata_moved}"
+        is "$got" "yes1 yes2" "single dir with existing metadata actually moved to new location with source and target paths relative"
+        # reset files (bring back moved files)
+        command mv dir1/dir3 .
+        command mv dir1/.about_dir3.md .
+    )
+    tests_run=$((tests_run + 1))
+
+    say "${yellow}Testing complete for function mv()!${reset}"
 }
 
 # --- Run tests ---
@@ -319,6 +547,7 @@ test_cp() {
 # test_about_meta_path
 # test_about_print_meta
 # test_ls
-test_cp
+# test_cp
+test_mv
 
-say "# PASS: $tests_run tests"
+# say "# PASS: $tests_run tests"
