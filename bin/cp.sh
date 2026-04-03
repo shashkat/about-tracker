@@ -17,6 +17,11 @@ dest="${args[${#args[@]}-1]}"
 unset "args[${#args[@]}-1]"
 sources=("${args[@]}")
 
+# initialize a list which will hold the commands to execute for moving each metadata file. This will be executed 
+# later after doing the move of the actual files.
+src_meta_list=()
+dest_meta_path_list=()
+
 for src in "${sources[@]}"; do
     [[ "$src" == -* ]] && continue
     src_meta="$(_about_meta_path "$src")"
@@ -32,6 +37,10 @@ for src in "${sources[@]}"; do
             dest_meta_name="$(_about_meta_name "$dest")"
         fi
         dest_meta_path="${dest_dir}/${dest_meta_name}"
+
+        # append src_meta and dest_meta_path to their respective lists
+        src_meta_list+=("$src_meta")
+        dest_meta_path_list+=("$dest_meta_path")
     fi
 done
 
@@ -43,4 +52,9 @@ command cp "$@" || exit $? # $? holds the exit status of the last command that r
 # computed all params related to metadata copying before, but just copying it after the actual files. The problem 
 # with copying metadata before actual files is that if its directory that is being copied, then it will be 
 # detected that the target location is existing and not that we are just renaming and copying
-command cp "$src_meta" "$dest_meta_path"
+
+# go through the list of commands for copying the metadata files and execute them
+length=${#src_meta_list[@]}
+for ((itr=0; itr<$length; itr++)); do
+    command cp "${src_meta_list[$itr]}" "${dest_meta_path_list[$itr]}"
+done

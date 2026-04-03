@@ -850,11 +850,11 @@ test_mv() {
 
 # --- Run tests ---
 
-# test_about_meta_name
-# test_about_meta_path
+test_about_meta_name
+test_about_meta_path
 # test_about_print_meta
 # test_ls
-# test_cp
+test_cp
 test_mv
 
 # say "# PASS: $tests_run tests"

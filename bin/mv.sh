@@ -19,6 +19,11 @@ unset "args[${#args[@]}-1]" # this removes the last entity from args array. Also
 # still accessed by args[-2]
 sources=("${args[@]}") # doing something like list[@] is a shorthand for looping through all the elements. Here, for cleanliness purposes, having a separate array storing all the non-last arguments.
 
+# initialize a list which will hold the commands to execute for moving each metadata file. This will be executed 
+# later after doing the move of the actual files.
+src_meta_list=()
+dest_meta_path_list=()
+
 # Move each source's metadata file alongside it
 for src in "${sources[@]}"; do # The default behaviour in bash (not zsh) if only $sources were used in loop was to iterate only through the first entity in sources. sources[@] is a shorthand to counter that.
     [[ "$src" == -* ]] && continue   # skip flags
@@ -37,6 +42,10 @@ for src in "${sources[@]}"; do # The default behaviour in bash (not zsh) if only
         fi
 
         dest_meta_path="${dest_dir}/${dest_meta_name}"
+        
+        # append src_meta and dest_meta_path to their respective lists
+        src_meta_list+=("$src_meta")
+        dest_meta_path_list+=("$dest_meta_path")
     fi
 done
 
@@ -46,4 +55,9 @@ done
 command mv "$@" || exit $?
 
 # computed all params related to metadata moving before, but just moving it after the actual files
-command mv "$src_meta" "$dest_meta_path"
+
+# go through the list of commands for copying the metadata files and execute them
+length=${#src_meta_list[@]}
+for ((itr=0; itr<$length; itr++)); do
+    command mv "${src_meta_list[$itr]}" "${dest_meta_path_list[$itr]}"
+done
