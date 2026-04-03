@@ -4,7 +4,7 @@
 # ensure that the env variable ABOUT_TRACKER_PATH is set. If not, exit
 if [[ -z "${ABOUT_TRACKER_PATH}" ]]; then # -z checks if a variable is empty or unset
     echo "Error: ABOUT_TRACKER_PATH global variable is not set. Please define it in your .zshrc or .bashrc before running this script."
-    exit 1
+    return 1 # even though this is not inside a function, using return instead of exit is the standard for files that are gonna be sourced, because otherwise the whole terminal session gets closed upon hitting that exit command.
 fi
 
 # also not importing the functions.sh here. It is gonna be sourced in each file in bin, as that would 
