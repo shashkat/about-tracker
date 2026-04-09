@@ -39,7 +39,10 @@ is() {
 test_about_meta_name() {
     local got
     local base_dir="${SCRIPT_DIR}/folders"
+    local start_time end_time elapsed
     tests_run=0
+
+    start_time=$(date +%s.%N)
 
     # 1. no input
     got="$(_about_meta_name "")"
@@ -69,13 +72,19 @@ test_about_meta_name() {
     got="$(_about_meta_name "$base_dir/dir1")"
     is "$got" ".about_dir1.md" "simple dir (dir1) abspath."
 
-    say "${yellow}Testing complete for function _about_meta_name()!${reset}"
+    end_time=$(date +%s.%N)
+    elapsed=$(awk -v s="$start_time" -v e="$end_time" 'BEGIN { printf "%.3f", e - s }')
+
+    say "${yellow}Testing complete for function _about_meta_name()! Took ${elapsed}s.${reset}"
 }
 
 test_about_meta_path() {
     local got
     local base_dir="${SCRIPT_DIR}/folders"
+    local start_time end_time elapsed
     tests_run=0
+
+    start_time=$(date +%s.%N)
     
     # 1. no input
     got="$(_about_meta_path "")"
@@ -105,7 +114,10 @@ test_about_meta_path() {
     got="$(_about_meta_path "$base_dir/dir1")"
     is "$got" "$base_dir/.about_dir1.md" "simple dir (dir1) abspath."
 
-    say "${yellow}Testing complete for function _about_meta_path()!${reset}"
+    end_time=$(date +%s.%N)
+    elapsed=$(awk -v s="$start_time" -v e="$end_time" 'BEGIN { printf "%.3f", e - s }')
+
+    say "${yellow}Testing complete for function _about_meta_path()! Took ${elapsed}s.${reset}"
 }
 
 test_about_print_meta() {
@@ -145,72 +157,61 @@ test_about_print_meta() {
 test_ls() {
     local got
     local expected
-    local base_dir="${SCRIPT_DIR}/test_folders"
+    local base_dir="${SCRIPT_DIR}/folders"
+    local start_time end_time elapsed
     tests_run=0
 
-    # 1. Directory with single file and matching metadata
+    start_time=$(date +%s.%N)
+
+    # 1. directory without own and inside metadata
     (
         cd "$base_dir" || exit
-        got="$(ls testing_ls)"
-        printf -v expected 'file.md\n\n%b───────────────about────────────────────%b\n%b▸ file.md: %b%bthis is about file1%b' \
-            "$grey" "$reset" "$grey" "$reset" "$grey" "$reset"
-        is "$got" "$expected" "ls: single file (test_folders/testing_ls/file.md)"
+        cd dir1
+        got="$(ls)"
+        printf -v expected 'dir1_file.txt\n\n%b───────────────about────────────────────%b' "$grey" "$reset"
+        is "$got" "$expected" "directory without own and inside metadata"
     )
     tests_run=$((tests_run + 1))
 
-    # 2. Directory with no metadata files at all (e.g. my_folder)
+    # 2. directory with its own metadata but no inside metadata
     (
         cd "$base_dir" || exit
-        got="$(ls my_folder 2>/dev/null)"
-        printf -v expected '\n%b───────────────about────────────────────%b' "$grey" "$reset"
-        is "$got" "$expected" "ls: directory with no files and no metadata (test_folders/my_folder)"
+        cd dir3
+        got="$(ls)"
+        printf -v expected 'dir3_file.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3/ (this directory): %b%bthis is about dir3%b' \
+            "$grey" "$reset" "$cyan" "$reset" "$grey" "$reset"
+        is "$got" "$expected" "directory with its own metadata but no inside metadata"
     )
     tests_run=$((tests_run + 1))
 
-    # 3. Directory with files but no matching .about_* metadata (e.g. ghi)
+    # 3. direcotory without its own metadata but with multiple inside metadata
     (
         cd "$base_dir" || exit
-        got="$(ls ghi)"
-        printf -v expected 'jkl.md\nmno.md\n\n%b───────────────about────────────────────%b' "$grey" "$reset"
-        is "$got" "$expected" "ls: directory with files but no .about_ metadata (test_folders/ghi)"
-    )
-    tests_run=$((tests_run + 1))
-
-    # 4. Directory containing multiple non-hidden files and one .about_ metadata file (def.md + .about_file_def.md.md)
-    (
-        cd "$base_dir" || exit
-        got="$(ls .)"
-        printf -v expected '%ba\033[39;49m\033[0m\nabc.md\ndef.md\n%bghi\033[39;49m\033[0m\n%bmy_folder\033[39;49m\033[0m\n%bpqr\033[39;49m\033[0m\n%btesting_ls\033[39;49m\033[0m\n\n%b───────────────about────────────────────%b\n%b▸ def.md: %b%bThis is a description for def%b\n%b▸ pqr: %b%bthis is description of pqr directory.%b' \
-            "$blue" \
-            "$blue" \
-            "$blue" \
-            "$blue" \
-            "$blue" \
-            "$grey" "$reset" "$grey" "$reset" "$grey" "$reset" \
+        got="$(ls)"
+        printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$grey" "$reset" \
+            "$grey" "$reset" "$grey" "$reset" \
             "$grey" "$reset" "$grey" "$reset"
-        is "$got" "$expected" "ls: metadata for def.md and pqr present"
+        is "$got" "$expected" "direcotory without its own metadata but with multiple inside metadata"
     )
     tests_run=$((tests_run + 1))
 
-    # 5. Directory where metadata has multiple lines (.about_file_stu.md.md inside pqr)
-    (
-        cd "$base_dir" || exit
-        got="$(ls pqr)"
-        printf -v expected 'stu.md\nvwx.md\nyz.md\n\n%b───────────────about────────────────────%b\n%b▸ pqr/ (this directory): %b%bthis is description of pqr directory.%b\n%b▸ stu.md: %b%bLine 1%b\n%bLine 2%b' \
-            "$grey" "$reset" "$cyan" "$reset" "$grey" "$reset" "$grey" "$reset" "$grey" "$reset" "$grey" "$reset"
-        is "$got" "$expected" "ls: multi-line metadata file (test_folders/pqr/.about_file_stu.md.md)"
-    )
-    tests_run=$((tests_run + 1))
+    end_time=$(date +%s.%N)
+    elapsed=$(awk -v s="$start_time" -v e="$end_time" 'BEGIN { printf "%.3f", e - s }')
 
-    
-
-    say "${yellow}Testing complete for function ls()!${reset}"
+    say "${yellow}Testing complete for function ls()! Took ${elapsed}s.${reset}"
 }
 
 test_cp() {
     local got
     local base_dir="${SCRIPT_DIR}/folders"
+    local start_time end_time elapsed
     tests_run=0
+
+    start_time=$(date +%s.%N)
 
     # 1. non existing input - file4.txt doesn't exist
     (
@@ -493,13 +494,19 @@ test_cp() {
         is "$got" "yes" "non existing dir attempted to be copied"
     )
     tests_run=$((tests_run + 1))
-    say "${yellow}Testing complete for function cp()!${reset}"
+    end_time=$(date +%s.%N)
+    elapsed=$(awk -v s="$start_time" -v e="$end_time" 'BEGIN { printf "%.3f", e - s }')
+
+    say "${yellow}Testing complete for function cp()! Took ${elapsed}s.${reset}"
 }
 
 test_mv() {
     local got
     local base_dir="${SCRIPT_DIR}/folders"
+    local start_time end_time elapsed
     tests_run=0
+
+    start_time=$(date +%s.%N)
 
     # 1. non existing input - file4.txt doesn't exist
     (
@@ -845,7 +852,10 @@ test_mv() {
     )
     tests_run=$((tests_run + 1))
 
-    say "${yellow}Testing complete for function mv()!${reset}"
+    end_time=$(date +%s.%N)
+    elapsed=$(awk -v s="$start_time" -v e="$end_time" 'BEGIN { printf "%.3f", e - s }')
+
+    say "${yellow}Testing complete for function mv()! Took ${elapsed}s.${reset}"
 }
 
 # --- Run tests ---
@@ -853,7 +863,7 @@ test_mv() {
 test_about_meta_name
 test_about_meta_path
 # test_about_print_meta
-# test_ls
+test_ls
 test_cp
 test_mv
 

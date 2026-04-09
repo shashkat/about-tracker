@@ -9,6 +9,7 @@ magenta="\033[35m"
 cyan="\033[36m"
 grey="\033[90m"
 reset="\033[0m"
+reset2="\033[39;49m"
 
 # Given a path (file or dir), print the name of its metadata file.
 # The metadata file lives in the same directory as the target.
