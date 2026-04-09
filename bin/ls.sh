@@ -44,20 +44,13 @@ found_any=0
 # Make all globs in this function return empty if no match
 shopt -s nullglob
 # since above, we ensured that $list_dir is absolute path, all the values that item takes in this loop are also absolute paths
-for item in "$list_dir"/.[!.]* "$list_dir"/*; do # "$list_dir"/.[!.]* matches all entries in current directory, whose names start with . but excludes just . and .. 
-    # "$list_dir"/* expands to all nonhidden files. * by default doesn't include the names starting with .
+for item in "$list_dir"/.about_*.md; do
+    
+    entity_name=${item##*/.about_} # here, ## means remove the longest prefix matching whatever pattern is after it. Here, the pattern is */.about_
+    entity_name=${entity_name%.md} # % removes the shortest matching suffix from the end
 
-    # Skip the metadata files themselves, and non-existent globs
-    [[ -e "$item" ]] || continue # ignore non existent path
-    bname="$(basename "$item")"
-    [[ "$bname" == .about_file_* || "$bname" == .about_dir_* ]] && continue # here, the usage of || is inside [[...]] hence 
-    # it means the logical OR. && here holds commands to its left and right, and executes the right one only if the 
-    # left one executes successfully (exit status 0).
-
-    meta="$(_about_meta_path "$item")"
-    if [[ -f "$meta" ]]; then
-        _about_print_meta "$meta" "$bname"
-        found_any=1
+    if [[ -f "${list_dir}/${entity_name}" || -d "${list_dir}/${entity_name}" ]]; then
+        _about_print_meta "$item" "$entity_name"
     fi
 done
 shopt -u nullglob

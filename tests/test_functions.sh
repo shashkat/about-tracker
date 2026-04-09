@@ -184,7 +184,7 @@ test_ls() {
     )
     tests_run=$((tests_run + 1))
 
-    # 3. direcotory without its own metadata but with multiple inside metadata
+    # 3. directory without its own metadata but with multiple inside metadata
     (
         cd "$base_dir" || exit
         got="$(ls)"
@@ -195,7 +195,50 @@ test_ls() {
             "$grey" "$reset" \
             "$grey" "$reset" "$grey" "$reset" \
             "$grey" "$reset" "$grey" "$reset"
-        is "$got" "$expected" "direcotory without its own metadata but with multiple inside metadata"
+        is "$got" "$expected" "directory without its own metadata but with multiple inside metadata"
+    )
+    tests_run=$((tests_run + 1))
+
+    # 4. directory without its own metadata but with multiple inside metadata - run 2
+    (
+        cd "$base_dir" || exit
+        got="$(ls)"
+        printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$grey" "$reset" \
+            "$grey" "$reset" "$grey" "$reset" \
+            "$grey" "$reset" "$grey" "$reset"
+        is "$got" "$expected" "directory without its own metadata but with multiple inside metadata  - run 2"
+    )
+    tests_run=$((tests_run + 1))
+    # 5. directory without its own metadata but with multiple inside metadata
+    (
+        cd "$base_dir" || exit
+        got="$(ls)"
+        printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$grey" "$reset" \
+            "$grey" "$reset" "$grey" "$reset" \
+            "$grey" "$reset" "$grey" "$reset"
+        is "$got" "$expected" "directory without its own metadata but with multiple inside metadata  - run 3"
+    )
+    tests_run=$((tests_run + 1))
+    # 6. directory without its own metadata but with multiple inside metadata
+    (
+        cd "$base_dir" || exit
+        got="$(ls)"
+        printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$blue" "$reset2" "$reset" \
+            "$grey" "$reset" \
+            "$grey" "$reset" "$grey" "$reset" \
+            "$grey" "$reset" "$grey" "$reset"
+        is "$got" "$expected" "directory without its own metadata but with multiple inside metadata  - run 4"
     )
     tests_run=$((tests_run + 1))
 
