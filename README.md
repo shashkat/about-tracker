@@ -19,6 +19,8 @@ Provide execute permissions to the scripts in about-tracker/bin. Run: `cd bin` a
 
 Finally, cd the main.sh file in the repo: `cd ../lib` and `source main.sh`
 
+NOTE: Eventually it would be nice to add the `source main.sh` to your .bashrc or .zshrc file too, so that each time when you start terminal, you don't have to source it afresh.
+
 ## Getting started
 
 Now you can go to any directory and for any file or directory in that location, add a metadata file using:
