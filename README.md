@@ -3,23 +3,16 @@ Tool to add and manage metadata for files and directories.
 
 ## Setup
 
-Run the following commands in terminal.
+Run the following commands in terminal:
 
-Go to the desired location where you want to clone this repository. Clone the repository using: `git clone https://github.com/shashkat/about-tracker.git`
+```sh
+git clone https://github.com/shashkat/about-tracker.git
+cd about-tracker
+./install.sh
+```
 
-Go inside the repo: `cd about-tracker`
+Then source your `.zshrc` or `.bashrc` file (as indicated by the install script) to activate `about-tracker` in your current shell session.
 
-Check current shell: `echo $SHELL`
-
-Depending on the output of that (whether it contains `zsh` or `bash`), run either of the following commands:
-- If the output contains `zsh`, run: `echo "export ABOUT_TRACKER_PATH=\"$(pwd)\"" >> ~/.zshrc` and then `source ~/.zshrc`
-- If the output contains `bash`, run: `echo "export ABOUT_TRACKER_PATH=\"$(pwd)\"" >> ~/.bashrc` and then `source ~/.bashrc`
-
-Provide execute permissions to the scripts in about-tracker/bin. Run: `cd bin` and then: `chmod +x *`
-
-Finally, cd the main.sh file in the repo: `cd ../lib` and `source main.sh`
-
-NOTE: Eventually it would be nice to add the `source main.sh` to your .bashrc or .zshrc file too, so that each time when you start terminal, you don't have to source it afresh.
 
 ## Getting started
 
