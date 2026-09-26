@@ -11,8 +11,7 @@ cd about-tracker
 ./install.sh
 ```
 
-Then source your `.zshrc` or `.bashrc` file (as indicated by the install script) to activate `about-tracker` in your current shell session.
-
+Then source your `.zshrc` or `.bashrc` file (as indicated by the output once you have installed successfully) to activate `about-tracker` in your current shell session.
 
 ## Getting started
 
