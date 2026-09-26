@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# Single entry point for about-tracker. The first argument is the subcommand (like git's "commit" in
+# "git commit"), and the rest of the arguments are forwarded to the matching script in libexec.
+
+if [[ -z "${ABOUT_TRACKER_PATH}" ]]; then # -z checks if a variable is empty or unset
+    echo "Error: ABOUT_TRACKER_PATH global variable is not set. Please define it in your .zshrc or .bashrc before running this script." >&2
+    exit 1
+fi
+
+usage() {
+    echo "Usage: abt <command> [args...]"
+    echo "Commands: ls, cp, mv, rm, modify"
+}
+
+if [[ $# -eq 0 ]]; then
+    usage >&2
+    exit 1
+fi
+
+subcommand="$1"
+shift # drops $1, so that "$@" now holds only the arguments meant for the subcommand
+
+case "$subcommand" in
+    ls|cp|mv|rm|modify)
+        # exec replaces the current process with the subcommand's script, so its exit code is passed on
+        # directly and no extra abt process is left waiting for it to finish.
+        exec "${ABOUT_TRACKER_PATH}/libexec/${subcommand}.sh" "$@"
+        ;;
+    -h|--help|help)
+        usage
+        ;;
+    *)
+        echo "abt: unknown command '$subcommand'" >&2
+        usage >&2
+        exit 1
+        ;;
+esac

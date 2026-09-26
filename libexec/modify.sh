@@ -15,7 +15,7 @@ source "${ABOUT_TRACKER_PATH}/lib/functions.sh"
 # been a string comparison and in this case, the result would still be the same
 if [[ $# -eq 0 ]]; then
     echo "Error: No argument supplied!"
-    echo "Usage: about_create <file_or_directory>"
+    echo "Usage: abt modify <file_or_directory>"
     exit 1 # return 1 is different from exit 1 in the sense that return is used inside functions and returns 1 to the function's caller instead of exiting the entire script, which exit 1 does.
 fi
 

@@ -19,9 +19,9 @@ if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
     cp -R "$SCRIPT_DIR" "$INSTALL_DIR"
 fi
 
-# try to make all the files in bin executable, but if something fails (which could be because of many reasons like the file being non standard type), dont emit 
+# try to make all the files in bin and libexec executable, but if something fails (which could be because of many reasons like the file being non standard type), dont emit
 # false as that would lead to the whole script exiting (because of set -e at top)
-chmod +x "$INSTALL_DIR/bin/"* 2>/dev/null || true
+chmod +x "$INSTALL_DIR/bin/"* "$INSTALL_DIR/libexec/"* 2>/dev/null || true
 
 ###############
 ### Detect if the shell being used is Bash or zsh
@@ -84,7 +84,7 @@ fi
 cat << 'EOF' >> "$activation_file"
 # >>> about-tracker >>>
 export ABOUT_TRACKER_PATH="$HOME/.local/share/about-tracker"
-source "$ABOUT_TRACKER_PATH/shell/about-tracker.sh"
+export PATH="$ABOUT_TRACKER_PATH/bin:$PATH"
 # <<< about-tracker <<<
 EOF
 

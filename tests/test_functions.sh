@@ -7,7 +7,7 @@ if [[ -z "${ABOUT_TRACKER_PATH}" ]]; then # -z checks if a variable is empty or 
     exit 1
 fi
 
-source "${ABOUT_TRACKER_PATH}/lib/main.sh"
+export PATH="${ABOUT_TRACKER_PATH}/bin:${PATH}" # makes the abt command available
 source "${ABOUT_TRACKER_PATH}/lib/functions.sh"
 
 SCRIPT_DIR="${ABOUT_TRACKER_PATH}/tests"
@@ -167,7 +167,7 @@ test_ls() {
     (
         cd "$base_dir" || exit
         cd dir1
-        got="$(ls)"
+        got="$(abt ls)"
         printf -v expected 'dir1_file.txt\n\n%b───────────────about────────────────────%b' "$grey" "$reset"
         is "$got" "$expected" "directory without own and inside metadata"
     )
@@ -177,7 +177,7 @@ test_ls() {
     (
         cd "$base_dir" || exit
         cd dir3
-        got="$(ls)"
+        got="$(abt ls)"
         printf -v expected 'dir3_file.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3/ (this directory): %b%bthis is about dir3%b' \
             "$grey" "$reset" "$cyan" "$reset" "$grey" "$reset"
         is "$got" "$expected" "directory with its own metadata but no inside metadata"
@@ -187,7 +187,7 @@ test_ls() {
     # 3. directory without its own metadata but with multiple inside metadata
     (
         cd "$base_dir" || exit
-        got="$(ls)"
+        got="$(abt ls)"
         printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
             "$blue" "$reset2" "$reset" \
             "$blue" "$reset2" "$reset" \
@@ -202,7 +202,7 @@ test_ls() {
     # 4. directory without its own metadata but with multiple inside metadata - run 2
     (
         cd "$base_dir" || exit
-        got="$(ls)"
+        got="$(abt ls)"
         printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
             "$blue" "$reset2" "$reset" \
             "$blue" "$reset2" "$reset" \
@@ -216,7 +216,7 @@ test_ls() {
     # 5. directory without its own metadata but with multiple inside metadata
     (
         cd "$base_dir" || exit
-        got="$(ls)"
+        got="$(abt ls)"
         printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
             "$blue" "$reset2" "$reset" \
             "$blue" "$reset2" "$reset" \
@@ -230,7 +230,7 @@ test_ls() {
     # 6. directory without its own metadata but with multiple inside metadata
     (
         cd "$base_dir" || exit
-        got="$(ls)"
+        got="$(abt ls)"
         printf -v expected '%bdir1%b%b\n%bdir2%b%b\n%bdir3%b%b\nfile1.txt\nfile2.txt\nfile3.txt\n\n%b───────────────about────────────────────%b\n%b▸ dir3: %b%bthis is about dir3%b\n%b▸ file3.txt: %b%bthis is about file3.txt%b' \
             "$blue" "$reset2" "$reset" \
             "$blue" "$reset2" "$reset" \
@@ -259,7 +259,7 @@ test_cp() {
     # 1. non existing input - file4.txt doesn't exist
     (
         cd "$base_dir" || exit
-        cp file4.txt file5.txt 2>/dev/null
+        abt cp file4.txt file5.txt 2>/dev/null
         got="$([[ ! -f "file5.txt" ]] && echo yes)"
         is "$got" "yes" "non existing file attempted to be copied"
     )
@@ -268,7 +268,7 @@ test_cp() {
     # 2. single file with existing metadata actually copied to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp file3.txt dir1
+        abt cp file3.txt dir1
         entity_copied="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
         metadata_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
         got="${entity_copied} ${metadata_copied}"
@@ -282,7 +282,7 @@ test_cp() {
     # 3. single file without existing metadata actually copied to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp file1.txt dir1
+        abt cp file1.txt dir1
         entity_copied="$([[ -f "dir1/file1.txt" ]] && echo yes)"
         got="${entity_copied}"
         is "$got" "yes" "single file without existing metadata actually copied to new location with source and target paths relative"
@@ -294,7 +294,7 @@ test_cp() {
     # 4. single file with existing metadata renamed-copied with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp file3.txt file4.txt
+        abt cp file3.txt file4.txt
         entity_copied="$([[ -f "file4.txt" ]] && echo yes1)"
         metadata_copied="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
         got="${entity_copied} ${metadata_copied}"
@@ -308,7 +308,7 @@ test_cp() {
     # 5. single file without existing metadata actually copied to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        cp "${base_dir}/file1.txt" "${base_dir}/dir1"
+        abt cp "${base_dir}/file1.txt" "${base_dir}/dir1"
         entity_copied="$([[ -f "dir1/file1.txt" ]] && echo yes)"
         got="${entity_copied}"
         is "$got" "yes" "single file without existing metadata actually copied to new location with source and target paths absolute"
@@ -320,7 +320,7 @@ test_cp() {
     # 6. single dir with existing metadata actually copied to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp -r dir3 dir1
+        abt cp -r dir3 dir1
         entity_copied="$([[ -d "dir1/dir3" ]] && echo yes1)"
         metadata_copied="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
         got="${entity_copied} ${metadata_copied}"
@@ -334,7 +334,7 @@ test_cp() {
     # 7. single dir without existing metadata actually copied to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp -r dir1 dir2
+        abt cp -r dir1 dir2
         entity_copied="$([[ -d "dir2/dir1" ]] && echo yes)"
         got="${entity_copied}"
         is "$got" "yes" "single dir without existing metadata actually copied to new location with source and target paths relative"
@@ -346,7 +346,7 @@ test_cp() {
     # 8. single dir with existing metadata renamed-copied with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp -r dir3 dir4
+        abt cp -r dir3 dir4
         entity_copied="$([[ -d "dir4" ]] && echo yes1)"
         metadata_copied="$([[ -f ".about_dir4.md" ]] && echo yes2)"
         got="${entity_copied} ${metadata_copied}"
@@ -360,7 +360,7 @@ test_cp() {
     # 9. single dir without existing metadata renamed-copied with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp -r dir1 dir4
+        abt cp -r dir1 dir4
         entity_copied="$([[ -d "dir4" ]] && echo yes)"
         got="${entity_copied}"
         is "$got" "yes" "single dir without existing metadata renamed-copied with source and target paths relative"
@@ -372,7 +372,7 @@ test_cp() {
     # 10. single dir with existing metadata actually copied to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        cp -r "${base_dir}/dir3" "${base_dir}/dir1"
+        abt cp -r "${base_dir}/dir3" "${base_dir}/dir1"
         entity_copied="$([[ -d "dir1/dir3" ]] && echo yes1)"
         metadata_copied="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
         got="${entity_copied} ${metadata_copied}"
@@ -386,7 +386,7 @@ test_cp() {
     # 11. single file with existing metadata actually copied to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        cp "${base_dir}/file3.txt" "${base_dir}/dir1"
+        abt cp "${base_dir}/file3.txt" "${base_dir}/dir1"
         entity_copied="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
         metadata_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
         got="${entity_copied} ${metadata_copied}"
@@ -400,7 +400,7 @@ test_cp() {
     # 12. single file with existing metadata renamed-copied with source and target paths absolute
     (
         cd "$base_dir" || exit
-        cp "${base_dir}/file3.txt" "${base_dir}/file4.txt"
+        abt cp "${base_dir}/file3.txt" "${base_dir}/file4.txt"
         entity_copied="$([[ -f "file4.txt" ]] && echo yes1)"
         metadata_copied="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
         got="${entity_copied} ${metadata_copied}"
@@ -414,7 +414,7 @@ test_cp() {
     # 13. single file without existing metadata renamed-copied with source and target paths relative
     (
         cd "$base_dir" || exit
-        cp file1.txt file4.txt
+        abt cp file1.txt file4.txt
         entity_copied="$([[ -f "file4.txt" ]] && echo yes)"
         got="${entity_copied}"
         is "$got" "yes" "single file without existing metadata renamed-copied with source and target paths relative"
@@ -426,7 +426,7 @@ test_cp() {
     # 14. single file without existing metadata renamed-copied with source and target paths absolute
     (
         cd "$base_dir" || exit
-        cp "${base_dir}/file1.txt" "${base_dir}/file4.txt"
+        abt cp "${base_dir}/file1.txt" "${base_dir}/file4.txt"
         entity_copied="$([[ -f "file4.txt" ]] && echo yes)"
         got="${entity_copied}"
         is "$got" "yes" "single file without existing metadata renamed-copied with source and target paths absolute"
@@ -438,7 +438,7 @@ test_cp() {
     # 15. single dir without existing metadata actually copied to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        cp -r "${base_dir}/dir1" "${base_dir}/dir2"
+        abt cp -r "${base_dir}/dir1" "${base_dir}/dir2"
         entity_copied="$([[ -d "dir2/dir1" ]] && echo yes)"
         got="${entity_copied}"
         is "$got" "yes" "single dir without existing metadata actually copied to new location with source and target paths absolute"
@@ -450,7 +450,7 @@ test_cp() {
     # 16. multiple files (mixed metadata) actually copied to new location with relative paths
     (
         cd "$base_dir" || exit
-        cp file1.txt file3.txt dir1
+        abt cp file1.txt file3.txt dir1
         file1_copied="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
         file3_copied="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
         file3_meta_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
@@ -466,7 +466,7 @@ test_cp() {
     # 17. multiple files (mixed metadata) actually copied to new location with absolute paths
     (
         cd "$base_dir" || exit
-        cp "${base_dir}/file1.txt" "${base_dir}/file3.txt" "${base_dir}/dir1"
+        abt cp "${base_dir}/file1.txt" "${base_dir}/file3.txt" "${base_dir}/dir1"
         file1_copied="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
         file3_copied="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
         file3_meta_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
@@ -482,7 +482,7 @@ test_cp() {
     # 18. multiple dirs (mixed metadata) actually copied to new location with relative paths
     (
         cd "$base_dir" || exit
-        cp -r dir1 dir3 dir2
+        abt cp -r dir1 dir3 dir2
         dir1_copied="$([[ -d "dir2/dir1" ]] && echo yes1)"
         dir3_copied="$([[ -d "dir2/dir3" ]] && echo yes2)"
         dir3_meta_copied="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
@@ -498,7 +498,7 @@ test_cp() {
     # 19. multiple dirs (mixed metadata) actually copied to new location with absolute paths
     (
         cd "$base_dir" || exit
-        cp -r "${base_dir}/dir1" "${base_dir}/dir3" "${base_dir}/dir2"
+        abt cp -r "${base_dir}/dir1" "${base_dir}/dir3" "${base_dir}/dir2"
         dir1_copied="$([[ -d "dir2/dir1" ]] && echo yes1)"
         dir3_copied="$([[ -d "dir2/dir3" ]] && echo yes2)"
         dir3_meta_copied="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
@@ -514,7 +514,7 @@ test_cp() {
     # 20. multiple mixed entities (file + dir, mixed metadata) copied to new location with relative paths
     (
         cd "$base_dir" || exit
-        cp -r file3.txt dir3 dir1
+        abt cp -r file3.txt dir3 dir1
         file3_copied="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
         file3_meta_copied="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
         dir3_copied="$([[ -d "dir1/dir3" ]] && echo yes3)"
@@ -532,7 +532,7 @@ test_cp() {
     # 21. non-existing source dir - dir4 doesn't exist
     (
         cd "$base_dir" || exit
-        cp -r dir4 dir1 2>/dev/null
+        abt cp -r dir4 dir1 2>/dev/null
         got="$([[ ! -d "dir1/dir4" ]] && echo yes)"
         is "$got" "yes" "non existing dir attempted to be copied"
     )
@@ -554,7 +554,7 @@ test_mv() {
     # 1. non existing input - file4.txt doesn't exist
     (
         cd "$base_dir" || exit
-        mv file4.txt file5.txt 2>/dev/null
+        abt mv file4.txt file5.txt 2>/dev/null
         got="$([[ ! -f "file5.txt" ]] && echo yes)"
         is "$got" "yes" "non existing file attempted to be moved"
     )
@@ -563,7 +563,7 @@ test_mv() {
     # 2. single file with existing metadata actually moved to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv file3.txt dir1
+        abt mv file3.txt dir1
         entity_moved="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
         metadata_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
         got="${entity_moved} ${metadata_moved}"
@@ -577,7 +577,7 @@ test_mv() {
     # 3. single dir with existing metadata actually moved to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv dir3 dir1
+        abt mv dir3 dir1
         entity_moved="$([[ -d "dir1/dir3" ]] && echo yes1)"
         metadata_moved="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
         got="${entity_moved} ${metadata_moved}"
@@ -591,7 +591,7 @@ test_mv() {
     # 4. single file without existing metadata actually moved to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv file1.txt dir1
+        abt mv file1.txt dir1
         entity_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
         source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -604,7 +604,7 @@ test_mv() {
     # 5. single file without existing metadata actually moved to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/file1.txt" "${base_dir}/dir1"
+        abt mv "${base_dir}/file1.txt" "${base_dir}/dir1"
         entity_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
         source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -617,7 +617,7 @@ test_mv() {
     # 6. single file with existing metadata actually moved to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/file3.txt" "${base_dir}/dir1"
+        abt mv "${base_dir}/file3.txt" "${base_dir}/dir1"
         entity_moved="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
         metadata_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
         source_gone="$([[ ! -f "file3.txt" ]] && echo yes3)"
@@ -633,7 +633,7 @@ test_mv() {
     # 7. single file with existing metadata renamed-moved with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv file3.txt file4.txt
+        abt mv file3.txt file4.txt
         entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
         metadata_moved="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
         source_gone="$([[ ! -f "file3.txt" ]] && echo yes3)"
@@ -649,7 +649,7 @@ test_mv() {
     # 8. single file without existing metadata renamed-moved with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv file1.txt file4.txt
+        abt mv file1.txt file4.txt
         entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
         source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -662,7 +662,7 @@ test_mv() {
     # 9. single file with existing metadata renamed-moved with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/file3.txt" "${base_dir}/file4.txt"
+        abt mv "${base_dir}/file3.txt" "${base_dir}/file4.txt"
         entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
         metadata_moved="$([[ -f ".about_file4.txt.md" ]] && echo yes2)"
         source_gone="$([[ ! -f "file3.txt" ]] && echo yes3)"
@@ -678,7 +678,7 @@ test_mv() {
     # 10. single file without existing metadata renamed-moved with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/file1.txt" "${base_dir}/file4.txt"
+        abt mv "${base_dir}/file1.txt" "${base_dir}/file4.txt"
         entity_moved="$([[ -f "file4.txt" ]] && echo yes1)"
         source_gone="$([[ ! -f "file1.txt" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -691,7 +691,7 @@ test_mv() {
     # 11. single dir without existing metadata actually moved to new location with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv dir1 dir2
+        abt mv dir1 dir2
         entity_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
         source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -704,7 +704,7 @@ test_mv() {
     # 12. single dir without existing metadata actually moved to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/dir1" "${base_dir}/dir2"
+        abt mv "${base_dir}/dir1" "${base_dir}/dir2"
         entity_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
         source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -717,7 +717,7 @@ test_mv() {
     # 13. single dir with existing metadata actually moved to new location with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/dir3" "${base_dir}/dir1"
+        abt mv "${base_dir}/dir3" "${base_dir}/dir1"
         entity_moved="$([[ -d "dir1/dir3" ]] && echo yes1)"
         metadata_moved="$([[ -f "dir1/.about_dir3.md" ]] && echo yes2)"
         source_gone="$([[ ! -d "dir3" ]] && echo yes3)"
@@ -733,7 +733,7 @@ test_mv() {
     # 14. single dir with existing metadata renamed-moved with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv dir3 dir4
+        abt mv dir3 dir4
         entity_moved="$([[ -d "dir4" ]] && echo yes1)"
         metadata_moved="$([[ -f ".about_dir4.md" ]] && echo yes2)"
         source_gone="$([[ ! -d "dir3" ]] && echo yes3)"
@@ -749,7 +749,7 @@ test_mv() {
     # 15. single dir without existing metadata renamed-moved with source and target paths relative
     (
         cd "$base_dir" || exit
-        mv dir1 dir4
+        abt mv dir1 dir4
         entity_moved="$([[ -d "dir4" ]] && echo yes1)"
         source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -762,7 +762,7 @@ test_mv() {
     # 16. single dir with existing metadata renamed-moved with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/dir3" "${base_dir}/dir4"
+        abt mv "${base_dir}/dir3" "${base_dir}/dir4"
         entity_moved="$([[ -d "dir4" ]] && echo yes1)"
         metadata_moved="$([[ -f ".about_dir4.md" ]] && echo yes2)"
         source_gone="$([[ ! -d "dir3" ]] && echo yes3)"
@@ -778,7 +778,7 @@ test_mv() {
     # 17. single dir without existing metadata renamed-moved with source and target paths absolute
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/dir1" "${base_dir}/dir4"
+        abt mv "${base_dir}/dir1" "${base_dir}/dir4"
         entity_moved="$([[ -d "dir4" ]] && echo yes1)"
         source_gone="$([[ ! -d "dir1" ]] && echo yes2)"
         got="${entity_moved} ${source_gone}"
@@ -791,7 +791,7 @@ test_mv() {
     # 18. multiple files (mixed metadata) actually moved to new location with relative paths
     (
         cd "$base_dir" || exit
-        mv file1.txt file3.txt dir1
+        abt mv file1.txt file3.txt dir1
         file1_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
         file3_moved="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
         file3_meta_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
@@ -810,7 +810,7 @@ test_mv() {
     # 19. multiple files (mixed metadata) actually moved to new location with absolute paths
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/file1.txt" "${base_dir}/file3.txt" "${base_dir}/dir1"
+        abt mv "${base_dir}/file1.txt" "${base_dir}/file3.txt" "${base_dir}/dir1"
         file1_moved="$([[ -f "dir1/file1.txt" ]] && echo yes1)"
         file3_moved="$([[ -f "dir1/file3.txt" ]] && echo yes2)"
         file3_meta_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes3)"
@@ -829,7 +829,7 @@ test_mv() {
     # 20. multiple dirs (mixed metadata) actually moved to new location with relative paths
     (
         cd "$base_dir" || exit
-        mv dir1 dir3 dir2
+        abt mv dir1 dir3 dir2
         dir1_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
         dir3_moved="$([[ -d "dir2/dir3" ]] && echo yes2)"
         dir3_meta_moved="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
@@ -848,7 +848,7 @@ test_mv() {
     # 21. multiple dirs (mixed metadata) actually moved to new location with absolute paths
     (
         cd "$base_dir" || exit
-        mv "${base_dir}/dir1" "${base_dir}/dir3" "${base_dir}/dir2"
+        abt mv "${base_dir}/dir1" "${base_dir}/dir3" "${base_dir}/dir2"
         dir1_moved="$([[ -d "dir2/dir1" ]] && echo yes1)"
         dir3_moved="$([[ -d "dir2/dir3" ]] && echo yes2)"
         dir3_meta_moved="$([[ -f "dir2/.about_dir3.md" ]] && echo yes3)"
@@ -867,7 +867,7 @@ test_mv() {
     # 22. multiple mixed entities (file + dir, mixed metadata) moved to new location with relative paths
     (
         cd "$base_dir" || exit
-        mv file3.txt dir3 dir1
+        abt mv file3.txt dir3 dir1
         file3_moved="$([[ -f "dir1/file3.txt" ]] && echo yes1)"
         file3_meta_moved="$([[ -f "dir1/.about_file3.txt.md" ]] && echo yes2)"
         dir3_moved="$([[ -d "dir1/dir3" ]] && echo yes3)"
@@ -889,7 +889,7 @@ test_mv() {
     # 23. non-existing source dir - dir4 doesn't exist
     (
         cd "$base_dir" || exit
-        mv dir4 dir1 2>/dev/null
+        abt mv dir4 dir1 2>/dev/null
         got="$([[ ! -d "dir1/dir4" ]] && echo yes)"
         is "$got" "yes" "non existing dir attempted to be moved"
     )
