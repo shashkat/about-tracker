@@ -46,3 +46,14 @@ alias rm='abt rm'
 You can still run the original command at any time using `command`, for example `command ls`.
 
 
+
+## Running the tests
+
+The tests use [bats-core](https://github.com/bats-core/bats-core) (`brew install bats-core`, or see its install docs). It is only needed for running the tests, not for using about-tracker. From the repo root, run:
+
+```sh
+bats tests/          # all tests
+bats tests/cp.bats   # tests for a single command
+```
+
+The tests always run against the code in this repo (not an installed copy). Every test works in its own temporary copy of `tests/fixtures`, and `install.bats` points `HOME` at a temporary directory, so running the tests never changes the fixtures or your real shell config.
