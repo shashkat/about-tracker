@@ -10,7 +10,7 @@ fi
 
 usage() {
     echo "Usage: abt <command> [args...]"
-    echo "Commands: ls, cp, mv, rm, modify"
+    echo "Commands: ls, cp, mv, rm, modify, doctor"
 }
 
 if [[ $# -eq 0 ]]; then
@@ -22,7 +22,7 @@ subcommand="$1"
 shift # drops $1, so that "$@" now holds only the arguments meant for the subcommand
 
 case "$subcommand" in
-    ls|cp|mv|rm|modify)
+    ls|cp|mv|rm|modify|doctor)
         # exec replaces the current process with the subcommand's script, so its exit code is passed on
         # directly and no extra abt process is left waiting for it to finish.
         exec "${ABOUT_TRACKER_PATH}/libexec/${subcommand}.sh" "$@"

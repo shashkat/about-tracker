@@ -15,7 +15,7 @@ Then source your `.zshrc` or `.bashrc` file (as indicated by the output once you
 
 ## Getting started
 
-All about-tracker commands are run through `abt`: `abt ls`, `abt cp`, `abt mv`, `abt rm` and `abt modify`. Run `abt help` to see the list.
+All about-tracker commands are run through `abt`: `abt ls`, `abt cp`, `abt mv`, `abt rm`, `abt modify` and `abt doctor`. Run `abt help` to see the list.
 
 Now you can go to any directory and for any file or directory in that location, add a metadata file using:
 `abt modify file.txt` or `abt modify directory`.
@@ -31,6 +31,16 @@ Now, whenever you run `abt ls` from any directory, if there are any metadata fil
 Whenver you copy or move a file/directory using `abt cp` or `abt mv`, its metadata file if existing will be copied appropriately automatically. If you try to remove a file/directory using `abt rm` whose metadata file already exists, then you will get warning about the removal of the assisting metadata file too, and you have to confirm that action.
 
 **NOTE: Its very important that the user doesn't move/copy the files through something other than the `abt` commands. Because then, the metadata files won't move along with the file.**
+
+If that has happened (for example, a file was moved in Finder or renamed by another program), `abt doctor` finds the metadata files left behind:
+
+```sh
+abt doctor               # checks the current directory
+abt doctor some/dir      # checks some/dir
+abt doctor -r some/dir   # checks some/dir and all its subdirectories
+```
+
+It lists every `.about_<name>.md` file whose `<name>` no longer exists in the same directory, and does not change anything. It exits with `0` if nothing is orphaned, `1` if orphaned metadata files were found, and `2` if the argument is not a directory.
 
 ### Replacing the standard commands (optional)
 

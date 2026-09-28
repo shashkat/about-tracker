@@ -23,7 +23,7 @@ run_install() {
     [ "$status" -eq 0 ]
     [ -x "${INSTALL_DIR}/bin/abt" ]
     [ -f "${INSTALL_DIR}/lib/functions.sh" ]
-    for script in ls cp mv rm modify; do
+    for script in ls cp mv rm modify doctor; do
         [ -x "${INSTALL_DIR}/libexec/${script}.sh" ]
     done
 }
