@@ -81,3 +81,10 @@ run_install() {
     [ "${lines[0]}" = "${INSTALL_DIR}/bin/abt" ]
     [ "${lines[1]}" = "Usage: abt <command> [args...]" ]
 }
+
+@test "after sourcing the init file, tab completion for abt is registered" {
+    run_install /bin/bash
+    run env -i HOME="$HOME" PATH="/usr/bin:/bin" bash -c 'source "$HOME/.bashrc" && complete -p abt'
+    [ "$status" -eq 0 ]
+    [ "$output" = "complete -o default -F _abt abt" ]
+}

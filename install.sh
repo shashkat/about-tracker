@@ -85,6 +85,7 @@ cat << 'EOF' >> "$activation_file"
 # >>> about-tracker >>>
 export ABOUT_TRACKER_PATH="$HOME/.local/share/about-tracker"
 export PATH="$ABOUT_TRACKER_PATH/bin:$PATH"
+if [ -f "$ABOUT_TRACKER_PATH/completions/abt.sh" ]; then source "$ABOUT_TRACKER_PATH/completions/abt.sh"; fi # tab completion for abt
 # <<< about-tracker <<<
 EOF
 

@@ -17,6 +17,8 @@ Then source your `.zshrc` or `.bashrc` file (as indicated by the output once you
 
 All about-tracker commands are run through `abt`: `abt ls`, `abt cp`, `abt mv`, `abt rm`, `abt modify` and `abt doctor`. Run `abt help` to see the list.
 
+Tab completion works for the subcommands in both bash and zsh: `abt l<TAB>` fills in `abt ls`, and `abt m<TAB>` lists `modify` and `mv`. After the subcommand, TAB completes file and directory names as usual. If you installed about-tracker before tab completion was added, run `./install.sh` again and source your `.zshrc` or `.bashrc`.
+
 Now you can go to any directory and for any file or directory in that location, add a metadata file using:
 `abt modify file.txt` or `abt modify directory`.
 You can also add a metadata for the current directory you are in using `abt modify .`. 
