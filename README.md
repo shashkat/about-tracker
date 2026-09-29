@@ -59,6 +59,16 @@ You can still run the original command at any time using `command`, for example 
 
 
 
+## Uninstalling
+
+From the cloned repo (or from `~/.local/share/about-tracker`), run:
+
+```sh
+./uninstall.sh
+```
+
+This removes the about-tracker block from your `.zshrc` and `.bashrc`, and deletes `~/.local/share/about-tracker`. Your `.about_<name>.md` metadata files are not touched. If you added aliases like `alias ls='abt ls'`, the script lists them so you can remove them, since they would stop working. Open a new terminal afterwards, as the current one still has `abt` on its `PATH`.
+
 ## Running the tests
 
 The tests use [bats-core](https://github.com/bats-core/bats-core) (`brew install bats-core`, or see its install docs). It is only needed for running the tests, not for using about-tracker. From the repo root, run:
@@ -68,4 +78,4 @@ bats tests/          # all tests
 bats tests/cp.bats   # tests for a single command
 ```
 
-The tests always run against the code in this repo (not an installed copy). Every test works in its own temporary copy of `tests/fixtures`, and `install.bats` points `HOME` at a temporary directory, so running the tests never changes the fixtures or your real shell config.
+The tests always run against the code in this repo (not an installed copy). Every test works in its own temporary copy of `tests/fixtures`, and `install.bats`/`uninstall.bats` point `HOME` at a temporary directory, so running the tests never changes the fixtures or your real shell config.

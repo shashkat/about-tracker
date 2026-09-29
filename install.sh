@@ -49,19 +49,25 @@ BLOCK_END="# <<< about-tracker <<<"
 
 # -q makes grep not print output and -F indicates that the pattern is not regex but literal.
 if grep -qF "$BLOCK_START" "$activation_file" 2>/dev/null; then
-    tmp_file="$(mktemp)" # create a temporary file and store its location in tmp_file
     # This is the start of an awk block, which is a small code in itself. -v in the first line means that assign a particular value to a variable named 
     # something. So the value of $BLOCK_START is assigned to the variable start. The awk code goes line-by-line through the input file, which is $activation_file 
     # here. Inside the awk code, each like is an if statement. For each line, the first part is a rule and second part is an action to do if that rule is 
     # true. Eg- if index($0, start) is true, then do { skip=1; next }. index($0, start) checks if start is present in current line. { skip=1; next } makes the 
     # value of variable skip as 1, and moves to the next iteration.
-    # Basically this leads to the contents of activation_file being compied to tmp_file, except the inclusive block between $BLOCK_START and $BLOCK_END.
-    awk -v start="$BLOCK_START" -v end="$BLOCK_END" '
+    # Basically this leads to the contents of activation_file being printed, except the inclusive block between $BLOCK_START and $BLOCK_END.
+    content="$(awk -v start="$BLOCK_START" -v end="$BLOCK_END" '
         index($0, start) { skip=1; next }
         index($0, end) { skip=0; next }
         !skip { print }
-    ' "$activation_file" > "$tmp_file"
-    mv "$tmp_file" "$activation_file"
+    ' "$activation_file")"
+    # Writing with > (instead of mv-ing a temporary file over it) keeps the file itself, so a .zshrc that is a
+    # symlink (e.g. into a dotfiles repo) stays a symlink and keeps its permissions. $(...) drops trailing newlines,
+    # so one is added back, unless nothing is left.
+    if [ -n "$content" ]; then
+        printf '%s\n' "$content" > "$activation_file"
+    else
+        : > "$activation_file" # : is a command that does nothing, so this just empties the file
+    fi
 fi
 
 # -n just looks at the supplied string (and not a file by its name) and returns true if the supplied string is non-empty. It gives false for newline.

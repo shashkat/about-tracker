@@ -88,3 +88,15 @@ run_install() {
     [ "$status" -eq 0 ]
     [ "$output" = "complete -o default -F _abt abt" ]
 }
+
+@test "reinstalling keeps a symlinked init file a symlink" {
+    mkdir -p "${HOME}/dotfiles"
+    printf 'export FOO=bar\n' > "${HOME}/dotfiles/zshrc"
+    ln -s "${HOME}/dotfiles/zshrc" "${HOME}/.zshrc"
+    run_install /bin/zsh
+    run_install /bin/zsh # the second install is the one that rewrites the file to replace the old block
+    [ "$status" -eq 0 ]
+    [ -L "${HOME}/.zshrc" ]
+    grep -qxF 'export FOO=bar' "${HOME}/dotfiles/zshrc"
+    [ "$(grep -cF "$BLOCK_START" "${HOME}/dotfiles/zshrc")" -eq 1 ]
+}
