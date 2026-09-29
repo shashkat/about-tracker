@@ -8,9 +8,147 @@ if [[ -z "${ABOUT_TRACKER_PATH}" ]]; then # -z checks if a variable is empty or 
     exit 1
 fi
 
+# Short usage, printed (to stderr) when abt is run without a command or with an unknown one
 usage() {
     echo "Usage: abt <command> [args...]"
     echo "Commands: ls, cp, mv, rm, modify, doctor"
+    echo "Run 'abt help' for an overview, or 'abt help <command>' for details on one command."
+}
+
+# The full overview printed by `abt help`. The heredocs below are quoted ('EOF') so nothing in them gets expanded.
+help_overview() {
+    cat << 'EOF'
+Usage: abt <command> [args...]
+       abt help [command]
+
+about-tracker lets you attach a short description (metadata) to any file or directory, and shows it
+next to the normal `ls` output. The metadata of an entity named <name> is stored in a hidden markdown
+file .about_<name>.md in the same directory as the entity. The metadata of the directory you are in
+(`abt modify .`) is therefore stored in its parent directory.
+
+Commands:
+  ls [path]                   List a directory like `ls`, followed by the metadata of its entries
+  modify <file_or_directory>  Create or edit the metadata of a file/directory in your editor
+  cp <source>... <dest>       Copy like `cp`, and copy the metadata files along with it
+  mv <source>... <dest>       Move/rename like `mv`, and move the metadata files along with it
+  rm <path>...                Remove like `rm`, and also remove the metadata files (asks first)
+  doctor [-r] [directory]     Find metadata files whose file/directory no longer exists
+  help [command]              Show this help, or detailed help for one command
+
+The ls, cp, mv and rm commands accept the same options as the standard commands they wrap.
+
+Examples:
+  abt modify notes.txt              write a description for notes.txt
+  abt modify .                      write a description for the current directory
+  abt ls                            list the current directory together with its metadata
+  abt mv notes.txt archive/         move notes.txt and its metadata into archive/
+  abt doctor -r                     check the current directory tree for orphaned metadata files
+
+Always move, copy and remove described files through abt. If another program (Finder, plain `mv`, ...)
+does it, the metadata file is left behind; `abt doctor` finds such files.
+
+Run 'abt help <command>' for more details on a command.
+EOF
+}
+
+# Detailed help for a single command, printed by `abt help <command>`. Returns 1 if the command is unknown.
+help_command() {
+    case "$1" in
+        ls) cat << 'EOF'
+Usage: abt ls [ls options] [path]
+
+Runs the system `ls` (with colors) with all the given arguments, then prints an "about" section with:
+  - the metadata of the listed directory itself (from .about_<dirname>.md in its parent), and
+  - the metadata of every file/directory inside it that has a .about_<name>.md file.
+If path is a file, the metadata of the directory containing it is shown. Without a path, the current
+directory is used.
+
+Examples:
+  abt ls
+  abt ls -la some/dir
+EOF
+            ;;
+        modify) cat << 'EOF'
+Usage: abt modify <file_or_directory>
+
+Opens the metadata file of the given file/directory in $EDITOR (vim if $EDITOR is not set). If it does
+not exist yet, an empty .about_<name>.md is created next to the entity first. The file/directory itself
+must already exist.
+
+Examples:
+  abt modify report.pdf             edits .about_report.pdf.md
+  abt modify data/                  edits .about_data.md
+  abt modify .                      edits ../.about_<current directory name>.md
+EOF
+            ;;
+        cp) cat << 'EOF'
+Usage: abt cp [cp options] <source>... <dest>
+
+Runs the system `cp` with all the given arguments. If that succeeds, the metadata file of every source
+that has one is copied too:
+  - copying into an existing directory keeps the metadata file name (dest/.about_<source name>.md),
+  - copying to a new name renames it to match (.about_<new name>.md).
+If `cp` fails, no metadata is copied. Options are passed to `cp` unchanged, so directories need -R.
+
+Examples:
+  abt cp notes.txt backup/
+  abt cp notes.txt notes_old.txt
+  abt cp -R project/ project_copy
+EOF
+            ;;
+        mv) cat << 'EOF'
+Usage: abt mv [mv options] <source>... <dest>
+
+Runs the system `mv` with all the given arguments. If that succeeds, the metadata file of every source
+that has one is moved too:
+  - moving into an existing directory keeps the metadata file name (dest/.about_<source name>.md),
+  - renaming renames it to match (.about_<new name>.md).
+If `mv` fails, the metadata files are left where they are.
+
+Examples:
+  abt mv notes.txt archive/
+  abt mv draft.md final.md
+EOF
+            ;;
+        rm) cat << 'EOF'
+Usage: abt rm [rm options] <path>...
+
+If any of the paths has a metadata file, those metadata files are listed and you are asked to confirm
+(y/N). Answering anything other than y aborts without removing anything. On confirmation, the metadata
+files are removed first, then the system `rm` runs with all the given arguments. Paths without metadata
+are removed right away, just like with `rm`. Options are passed to `rm` unchanged, so directories need -r.
+
+Examples:
+  abt rm old_notes.txt
+  abt rm -r old_project/
+EOF
+            ;;
+        doctor) cat << 'EOF'
+Usage: abt doctor [-r] [directory]
+
+Lists orphaned metadata files: .about_<name>.md files whose <name> does not exist in the same directory.
+This happens when a described file/directory was moved, renamed or deleted without abt. Nothing is
+changed; you can move or delete the listed files yourself.
+
+  directory   the directory to check (default: the current directory)
+  -r          also check all subdirectories
+
+Exit status: 0 if no orphans were found, 1 if some were found, 2 if the arguments are invalid.
+
+Examples:
+  abt doctor
+  abt doctor -r ~/Documents
+EOF
+            ;;
+        help) cat << 'EOF'
+Usage: abt help [command]
+
+Without a command, prints an overview of about-tracker and all its commands. With a command, prints
+detailed help for that command.
+EOF
+            ;;
+        *) return 1 ;;
+    esac
 }
 
 if [[ $# -eq 0 ]]; then
@@ -28,7 +166,13 @@ case "$subcommand" in
         exec "${ABOUT_TRACKER_PATH}/libexec/${subcommand}.sh" "$@"
         ;;
     -h|--help|help)
-        usage
+        if [[ $# -eq 0 ]]; then
+            help_overview
+        elif ! help_command "$1"; then
+            echo "abt: no help for unknown command '$1'" >&2
+            usage >&2
+            exit 1
+        fi
         ;;
     *)
         echo "abt: unknown command '$subcommand'" >&2

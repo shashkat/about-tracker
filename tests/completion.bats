@@ -32,6 +32,18 @@ complete_bash() {
     [ "$output" = "modify mv" ]
 }
 
+@test "bash: abt help <TAB> lists the subcommands" {
+    run complete_bash "abt help "
+    [ "$output" = "cp doctor ls modify mv rm help" ]
+    run complete_bash "abt help m"
+    [ "$output" = "modify mv" ]
+}
+
+@test "bash: nothing is suggested after abt help <command>" {
+    run complete_bash "abt help ls "
+    [ "$output" = "" ]
+}
+
 @test "bash: arguments after the subcommand fall back to filename completion" {
     run complete_bash "abt ls fi"
     [ "$output" = "" ] # empty, so that bash's `-o default` filename completion takes over
